@@ -1,0 +1,88 @@
+# Verificações do fluxo SDD: Gate 1 (historia) e Gate 3 (entrega).
+# Os jobs `historia` e `entrega` são pulados quando o branch não é do tipo deles; no GitHub,
+# um job pulado por `if` conta como sucesso para checks obrigatórios.
+name: gates
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  autoteste:
+    name: autoteste
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Testar o script de verificações
+        if: hashFiles('tools/gates/verificar.test.js') != ''
+        run: node --test tools/gates/verificar.test.js
+
+  historia:
+    name: historia
+    if: startsWith(github.head_ref, 'historia/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Verificar a história
+        env:
+          RAMO: ${{ github.head_ref }}
+          BASE: origin/${{ github.base_ref }}
+        run: |
+          set -euo pipefail
+          id="${RAMO#historia/}"
+          if ! [[ "$id" =~ ^HIST-[0-9]{3}-[a-z0-9]+(-[a-z0-9]+)*$ ]]; then
+            echo "::error::Nome de branch inválido. Use historia/HIST-XXX-<dominio> (ex.: historia/HIST-001-auth)."
+            exit 1
+          fi
+          alterados="$(git diff --name-only "$BASE...HEAD")"
+          padrao="^docs/historias/${id}/historia(-v[0-9]+)?\.md$"
+          fora="$(printf '%s\n' "$alterados" | grep -Ev "$padrao" | grep -v '^$' || true)"
+          if [ -n "$fora" ]; then
+            echo "::error::O PR de história só pode alterar docs/historias/${id}/historia*.md. Fora do escopo:"
+            echo "$fora"
+            exit 1
+          fi
+          arquivos="$(printf '%s\n' "$alterados" | grep -E "$padrao" || true)"
+          if [ -z "$arquivos" ]; then
+            echo "::error::Nenhum historia.md alterado em docs/historias/${id}/."
+            exit 1
+          fi
+          falhou=0
+          while IFS= read -r arquivo; do
+            if [ -f "$arquivo" ]; then
+              node tools/gates/verificar.js historia "$arquivo" || falhou=1
+            fi
+          done <<< "$arquivos"
+          exit "$falhou"
+
+  entrega:
+    name: entrega
+    if: startsWith(github.head_ref, 'feature/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Verificar a entrega
+        env:
+          RAMO: ${{ github.head_ref }}
+        run: |
+          set -euo pipefail
+          id="${RAMO#feature/}"
+          if ! [[ "$id" =~ ^HIST-[0-9]{3}-[a-z0-9]+(-[a-z0-9]+)*$ ]]; then
+            echo "::error::Nome de branch inválido. Use feature/HIST-XXX-<dominio> (ex.: feature/HIST-001-auth)."
+            exit 1
+          fi
+          node tools/gates/verificar.js entrega "docs/historias/${id}" --testes auto

@@ -1,0 +1,57 @@
+# CI da stack Flutter Web: formatação (120), análise, regras de `padrao-codigo` (modo `qualidade`),
+# testes e cobertura mínima (lcov). Roda nos módulos do AGENTS.md que usam a skill
+# `stack-flutter-web` e que foram alterados pelo PR. Sem módulo alterado, passa.
+name: ci-flutter-web
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  flutter-web:
+    name: flutter-web
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Descobrir módulos alterados
+        id: modulos
+        env:
+          BASE: origin/${{ github.base_ref }}
+        run: |
+          set -euo pipefail
+          pastas="$(node tools/gates/verificar.js modulos stack-flutter-web --base "$BASE" | paste -sd, -)"
+          echo "pastas=${pastas}" >> "$GITHUB_OUTPUT"
+          echo "Módulos Flutter alterados: ${pastas:-nenhum}"
+      - uses: subosito/flutter-action@v2
+        if: steps.modulos.outputs.pastas != ''
+        with:
+          channel: stable # ajuste para a versão definida nas decisões técnicas do projeto
+          cache: true
+      - name: Verificar módulos
+        if: steps.modulos.outputs.pastas != ''
+        env:
+          PASTAS: ${{ steps.modulos.outputs.pastas }}
+        run: |
+          set -euo pipefail
+          IFS=',' read -ra lista <<< "$PASTAS"
+          for pasta in "${lista[@]}"; do
+            echo "::group::${pasta}"
+            (
+              cd "$pasta"
+              flutter pub get
+              dart format --output=none --set-exit-if-changed --line-length 120 lib test
+              flutter analyze
+              node "$GITHUB_WORKSPACE/tools/gates/verificar.js" qualidade lib test
+              flutter test --coverage
+              node "$GITHUB_WORKSPACE/tools/gates/verificar.js" lcov coverage/lcov.info --min auto
+            )
+            echo "::endgroup::"
+          done

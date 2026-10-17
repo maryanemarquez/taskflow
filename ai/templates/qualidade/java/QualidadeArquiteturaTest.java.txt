@@ -1,0 +1,31 @@
+// Modelo do teste de arquitetura de padrao-codigo (Q-06).
+// Copie para src/test/java/<pacote>/QualidadeArquiteturaTest.java, remova a extensão ".txt" e ajuste
+// PACOTE_BASE e CLASSE_DE_LOG para os valores do projeto (definidos nas decisões técnicas).
+// Este teste é de infraestrutura do framework e não cita ID de cenário.
+package com.exemplo.projeto;
+
+import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
+
+import com.tngtech.archunit.core.importer.ImportOption;
+import com.tngtech.archunit.junit.AnalyzeClasses;
+import com.tngtech.archunit.junit.ArchTest;
+import com.tngtech.archunit.lang.ArchRule;
+import com.tngtech.archunit.library.GeneralCodingRules;
+
+@AnalyzeClasses(packages = QualidadeArquiteturaTest.PACOTE_BASE, importOptions = ImportOption.DoNotIncludeTests.class)
+class QualidadeArquiteturaTest {
+
+    static final String PACOTE_BASE = "com.exemplo.projeto";
+    static final String CLASSE_DE_LOG = "com.exemplo.projeto.comum.log.AppLogger";
+
+    @ArchTest
+    static final ArchRule semSaidaPadrao = GeneralCodingRules.NO_CLASSES_SHOULD_ACCESS_STANDARD_STREAMS;
+
+    @ArchTest
+    static final ArchRule semJavaUtilLogging = GeneralCodingRules.NO_CLASSES_SHOULD_USE_JAVA_UTIL_LOGGING;
+
+    @ArchTest
+    static final ArchRule logSomentePelaClasseCentral = noClasses()
+            .that().doNotHaveFullyQualifiedName(CLASSE_DE_LOG)
+            .should().dependOnClassesThat().resideInAnyPackage("org.slf4j..", "org.apache.logging..");
+}

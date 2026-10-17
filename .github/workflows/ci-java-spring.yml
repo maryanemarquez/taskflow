@@ -1,0 +1,70 @@
+# CI da stack Java/Spring: testes (Testcontainers), cobertura (JaCoCo), estilo (Checkstyle, PMD,
+# ArchUnit) e regras de `padrao-codigo` (modo `qualidade`). Roda nos módulos do AGENTS.md que
+# usam a skill `stack-java-spring` e que foram alterados pelo PR. Sem módulo alterado, passa.
+name: ci-java-spring
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  java-spring:
+    name: java-spring
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Descobrir módulos alterados
+        id: modulos
+        env:
+          BASE: origin/${{ github.base_ref }}
+        run: |
+          set -euo pipefail
+          pastas="$(node tools/gates/verificar.js modulos stack-java-spring --base "$BASE" | paste -sd, -)"
+          echo "pastas=${pastas}" >> "$GITHUB_OUTPUT"
+          echo "Módulos Java alterados: ${pastas:-nenhum}"
+      - uses: actions/setup-java@v4
+        if: steps.modulos.outputs.pastas != ''
+        with:
+          distribution: temurin
+          java-version: '21' # ajuste para a versão definida nas decisões técnicas do projeto
+          cache: maven
+      - name: Regras de estilo (padrao-codigo)
+        if: steps.modulos.outputs.pastas != ''
+        env:
+          PASTAS: ${{ steps.modulos.outputs.pastas }}
+        run: |
+          set -euo pipefail
+          IFS=',' read -ra lista <<< "$PASTAS"
+          for pasta in "${lista[@]}"; do
+            node tools/gates/verificar.js qualidade "$pasta/src"
+          done
+      - name: Testes, cobertura e análise estática
+        if: steps.modulos.outputs.pastas != ''
+        env:
+          PASTAS: ${{ steps.modulos.outputs.pastas }}
+        run: |
+          set -euo pipefail
+          IFS=',' read -ra lista <<< "$PASTAS"
+          for pasta in "${lista[@]}"; do
+            (cd "$pasta" && ./mvnw -B verify)
+          done
+      - name: Guardar relatórios
+        if: always() && steps.modulos.outputs.pastas != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: relatorios-java
+          path: |
+            **/target/site/jacoco/
+            **/target/surefire-reports/
+            **/target/checkstyle-result.xml
+            **/target/pmd.xml
+            **/target/cpd.xml
+          if-no-files-found: ignore

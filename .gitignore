@@ -1,0 +1,26 @@
+# Segredos e configuração local
+.env
+.env.*
+!.env.example
+*.local.yml
+
+# IDEs
+.idea/
+.vscode/
+*.iml
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+
+# Dependências e artefatos de build comuns
+node_modules/
+target/
+build/
+dist/
+coverage/
+.dart_tool/
+*.class
+
+# Configuração local de ferramentas de IA
+.claude/settings.local.json

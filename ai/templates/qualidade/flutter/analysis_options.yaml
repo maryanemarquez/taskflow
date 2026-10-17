@@ -1,0 +1,24 @@
+# Modelo de analysis_options.yaml para módulos Flutter (padrao-codigo).
+# Copie para <modulo>/analysis_options.yaml. Exige o pacote flutter_lints (dev_dependency).
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  errors:
+    # Q-09: código morto vira erro e reprova o CI.
+    unused_import: error
+    unused_element: error
+    unused_local_variable: error
+    unused_field: error
+    unused_catch_clause: error
+    dead_code: error
+
+formatter:
+  page_width: 120 # Q-01
+
+linter:
+  rules:
+    avoid_print: true # Q-06: use a classe centralizada de logging
+    camel_case_types: true # Q-08
+    non_constant_identifier_names: true # Q-08
+    constant_identifier_names: true # Q-08
+    file_names: true # Q-08

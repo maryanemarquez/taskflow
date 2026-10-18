@@ -6,19 +6,21 @@ TaskFlow é uma aplicação web SaaS de gestão de tarefas e projetos. Existem d
 
 ## 2. Vocabulário de Domínios (V1)
 
-| # | Domínio | Definição |
-|---|---|---|
-| 1 | **Autenticação** | Cadastro e login de usuários, recuperação de senha, controle de sessão e logout |
-| 2 | **Workspace** | Ambiente administrado por um Proprietário, contém projetos e membros |
-| 3 | **Modo Equipe** | Único modo existente nesta versão; workspace colaborativo padrão |
-| 4 | **Membros e Convite** | Convite de novos usuários para o workspace (na V1, sempre como Membro; a definição de papel no convite chega na V2); aceite do convite; listagem e remoção de membros |
-| 5 | **Projeto** | Unidade de organização de tarefas dentro de um workspace |
-| 6 | **Tarefa** | Unidade de trabalho, único tipo existente: Simples |
-| 7 | **Busca e Filtros** | Localização de tarefas/projetos por critérios diversos |
-| 8 | **Dashboard** | Visão consolidada e simplificada do estado das tarefas |
-| 9 | **Fundação** (`fundacao`) | Domínio técnico, sem funcionalidade de negócio: estrutura dos módulos, integração contínua, configuração de ambientes, migração inicial do banco e demais bases exigidas pelas decisões técnicas. Gera histórias de infraestrutura, sem requisitos funcionais |
+| # | Domínio | Slug | Definição |
+|---|---|---|---|
+| 1 | **Autenticação** | `auth` | Cadastro e login de usuários, recuperação de senha, controle de sessão e logout |
+| 2 | **Workspace** | — | Ambiente administrado por um Proprietário, contém projetos e membros. Não gera histórias próprias: a criação do workspace (RF-02 e RF-03) pertence ao domínio `auth`. |
+| 3 | **Modo Equipe** | — | Único modo existente nesta versão; workspace colaborativo padrão. Não gera histórias próprias. |
+| 4 | **Membros e Convite** | `membros` | Convite de novos usuários para o workspace (na V1, sempre como Membro; a definição de papel no convite chega na V2); aceite do convite; listagem e remoção de membros |
+| 5 | **Projeto** | `projeto` | Unidade de organização de tarefas dentro de um workspace |
+| 6 | **Tarefa** | `tarefa` | Unidade de trabalho, único tipo existente: Simples |
+| 7 | **Busca e Filtros** | `busca-filtros` | Localização de tarefas/projetos por critérios diversos |
+| 8 | **Dashboard** | `dashboard` | Visão consolidada e simplificada do estado das tarefas |
+| 9 | **Fundação** (`fundacao`) | `fundacao` | Domínio técnico, sem funcionalidade de negócio: estrutura dos módulos, integração contínua, configuração de ambientes, migração inicial do banco e demais bases exigidas pelas decisões técnicas. Gera histórias de infraestrutura, sem requisitos funcionais |
 
-Domínio presente mas ainda sem funcionalidade própria: **Configurações** (apenas edição de nome e senha do próprio perfil/conta).
+Domínio presente mas ainda sem funcionalidade própria: **Configurações** (apenas edição de nome e senha do próprio perfil/conta) (slug `configuracoes`).
+
+O **slug** é o nome usado no identificador das histórias (`HIST-XXX-<slug>`) e na ordem de dependência do Backlog. Domínios sem slug não geram histórias.
 
 ## 3. Entidades Principais
 

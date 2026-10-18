@@ -160,7 +160,7 @@ Em todas as telas autenticadas há um menu do usuário com acesso a Configuraç�
 3. **Convite Expirado ou Inválido** — mensagem "Este convite expirou", orientação para solicitar novo convite ao responsável pelo workspace, botão "Voltar para o login". Também é exibida para convite já utilizado ou invalidado.
 4. **Solicitar Recuperação de Senha** — campo de e-mail, botão de envio, mensagem genérica de confirmação.
 5. **Redefinir Senha** — formulário de nova senha e confirmação (token válido), ou mensagem informando que o link não é mais válido (token expirado/inválido).
-6. **Dashboard** — contagem de tarefas do workspace por status, destaque "Minhas tarefas", acesso rápido aos projetos. Com o workspace sem projetos, exibe estado vazio (com a ação "Criar primeiro projeto" para o Proprietário).
+6. **Dashboard** — contagem de tarefas do workspace por status, destaque "Minhas tarefas", acesso rápido aos projetos. Com o workspace sem projetos, exibe estado vazio (com a ação "Criar primeiro projeto" para o Proprietário). Até a entrega do Dashboard, o sistema usa uma tela inicial provisória do workspace, definida na história do domínio `auth`.
 7. **Listagem de Projetos** — projetos do workspace, ação de criar novo (Proprietário). Sem projetos, exibe estado vazio.
 8. **Detalhe do Projeto** — tarefas do projeto em Kanban ou Lista, com filtros.
 9. **Criação/Edição de Tarefa** — formulário com título, descrição, prioridade (padrão Média), tags (digitação, até 10), prazo e responsável. Na criação, o Proprietário escolhe o responsável (qualquer membro, inclusive ele mesmo); para o Membro, o responsável é ele mesmo e não é editável. O formulário **não** contém o campo de status: na criação o status é "Pendente a iniciar", e a mudança de status é feita por controle próprio na tarefa (Kanban ou detalhe). Na edição, o responsável só é alterável pelo Proprietário, e o projeto não é alterável.
@@ -176,14 +176,14 @@ Em todas as telas autenticadas há um menu do usuário com acesso a Configuraç�
 2. Sistema cria a conta e, automaticamente, um workspace novo, com o nome "Workspace de {nome do usuário}".
 3. Usuário se torna Proprietário desse workspace.
 4. Sistema inicia a sessão do usuário automaticamente.
-5. Usuário é direcionado ao Dashboard (workspace vazio, sem projetos).
+5. Usuário é direcionado ao Dashboard (workspace vazio, sem projetos). Enquanto o Dashboard não estiver disponível, é direcionado a uma tela inicial provisória do workspace.
 
 ### 7.2 Convite e criação de conta por convite
 1. Proprietário acessa a tela de Membros e informa o e-mail da pessoa a convidar. Se o e-mail pertencer a um usuário que já faz parte de um workspace, o sistema rejeita o convite e informa o Proprietário.
 2. Sistema gera o convite (token único, validade de 2 dias), invalida eventual convite anterior pendente para o mesmo e-mail e envia e-mail com link exclusivo.
 3. Pessoa convidada acessa o link. Se não tiver conta, realiza o cadastro informando apenas nome e senha (o e-mail vem do convite). Se já tiver conta sem workspace, apenas se autentica (ver 7.9).
 4. Ao concluir o cadastro, o usuário é vinculado automaticamente ao workspace do convite, como Membro, e o convite é marcado como utilizado.
-5. Sistema inicia a sessão do usuário automaticamente e o direciona ao Dashboard do workspace, com os projetos já visíveis.
+5. Sistema inicia a sessão do usuário automaticamente e o direciona ao Dashboard do workspace, com os projetos já visíveis. Enquanto o Dashboard não estiver disponível, o direciona a uma tela inicial provisória do workspace.
 
 ### 7.3 Criação de projeto
 1. Proprietário acessa a Listagem de Projetos e aciona "Novo Projeto".
@@ -227,5 +227,5 @@ Em todas as telas autenticadas há um menu do usuário com acesso a Configuraç�
 1. Usuário removido de um workspace, ao se autenticar (ou na próxima interação com o sistema), é direcionado à tela "Sem Workspace", que apenas informa a situação e oferece "Sair".
 2. Para voltar a um workspace, o Proprietário precisa gerar um novo convite para o e-mail dessa conta (permitido, pois o e-mail não pertence a nenhum workspace).
 3. Usuário acessa o link do convite. Como já possui conta sem workspace, a página solicita apenas a autenticação (senha), exibindo o e-mail e o workspace do convite.
-4. Com token válido e autenticação bem-sucedida, o usuário é vinculado ao workspace do convite como Membro, o convite é marcado como utilizado e o usuário é direcionado ao Dashboard.
+4. Com token válido e autenticação bem-sucedida, o usuário é vinculado ao workspace do convite como Membro, o convite é marcado como utilizado e o usuário é direcionado ao Dashboard (ou, enquanto ele não estiver disponível, à tela inicial provisória do workspace).
 5. Se o token estiver expirado, inválido, utilizado ou invalidado, aplica-se o fluxo 7.7.

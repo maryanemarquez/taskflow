@@ -50,6 +50,8 @@ Cada decisão tem identificador (`DT-XX`). Um desvio de qualquer uma delas em um
 ### DT-04 — Cliente HTTP: dio
 - **Decisão:** usar `dio`, com interceptors para: anexar `Authorization: Bearer`; renovar o token de acesso de forma transparente **somente** ao receber `401` com `codigo = NAO_AUTENTICADO`; converter respostas `application/problem+json` em erros tipados (campo `codigo`).
 - **Fila única de renovação:** o interceptor mantém uma única renovação em andamento por vez. Requisições que recebem `401 NAO_AUTENTICADO` durante ela aguardam o resultado e são repetidas uma vez com o novo token. Se a renovação falhar, a sessão é encerrada e o usuário vai ao login.
+- **Sem laço de renovação:** a própria chamada de renovação (`refresh`) nunca dispara nova renovação. Um `401` nela encerra a sessão.
+- **Abas simultâneas:** antes de encerrar a sessão por falha na renovação, o cliente confere se o refresh token armazenado mudou desde o início da tentativa (outra aba pode tê-lo renovado dentro da janela de tolerância do DT-05). Se mudou, repete a renovação uma única vez com o token novo; se não mudou, encerra a sessão.
 - **Consequências:** o cliente nunca interpreta o texto de `detail` para decidir comportamento; usa apenas `codigo`. Outros `401` (ex.: `CREDENCIAIS_INVALIDAS` no login) não disparam renovação.
 
 ### Datas no cliente
@@ -104,8 +106,8 @@ Os valores são parâmetros de configuração (com esses padrões), para facilit
 - **Versões:** Java LTS (21 ou superior), Spring Boot e Flutter na versão estável vigente no início do projeto, fixadas no `pom.xml` e no `pubspec.yaml`; MySQL 8.4 LTS.
 
 ### DT-11 — Estratégia de testes
-- **Backend:** JUnit5 + Mockito para testes de unidade; **Testcontainers com MySQL real** (mesma versão do ambiente) para testes de integração. H2 não é usado. Cobertura medida com JaCoCo (≥80%).
-- **Frontend:** `flutter test` com cobertura (`--coverage`, ≥80%).
+- **Backend:** JUnit5 + Mockito para testes de unidade; **Testcontainers com MySQL real** (mesma versão do ambiente) para testes de integração. H2 não é usado. Cobertura medida com JaCoCo, com o mínimo definido no `AGENTS.md` (hoje 80%).
+- **Frontend:** `flutter test` com cobertura (`--coverage`, com o mínimo definido no `AGENTS.md`).
 - **Tempo:** o `Clock` injetado (DT-09) é usado em todo teste que dependa de expiração.
 - **E-mail:** o envio é feito por uma interface (porta `EmailSender`), substituída por um dublê nos testes.
 

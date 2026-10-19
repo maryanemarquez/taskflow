@@ -204,12 +204,27 @@ function analisarEstrutura(codigo, dart) {
   const itens = [];
   let parenteses = 0;
   let inicioCabeca = 0;
+  // Dart: construtor sem corpo ("const Tela({...});") termina em ";" e nunca abre "{".
+  const registrarConstrutorSemCorpo = (fim) => {
+    const pai = pilha[pilha.length - 1];
+    if (!dart || !pai || pai.tipo !== 'classe') return;
+    const assinatura = lerAssinatura(texto.slice(inicioCabeca, fim));
+    if (!assinatura || assinatura.nome !== pai.nome) return;
+    const linha = linhaDe(inicioCabeca + assinatura.deslocamento);
+    itens.push({
+      tipo: 'metodo', nome: assinatura.nome, parametros: contarParametros(assinatura.parametros, true),
+      linhaInicial: linha, linhaFinal: linha,
+    });
+  };
   for (let p = 0; p < texto.length; p += 1) {
     const c = texto[p];
     if (c === '(') parenteses += 1;
     else if (c === ')') parenteses = Math.max(0, parenteses - 1);
     else if (parenteses === 0) {
-      if (c === ';') inicioCabeca = p + 1;
+      if (c === ';') {
+        registrarConstrutorSemCorpo(p);
+        inicioCabeca = p + 1;
+      }
       else if (c === '{') {
         const bloco = classificar(texto.slice(inicioCabeca, p), inicioCabeca, pilha, dart);
         pilha.push(bloco);
@@ -235,6 +250,28 @@ const ehTextoDeNegocio = (t) => /^https?:\/\//.test(t) || /\p{L}+\s+\p{L}+/u.tes
 function declaraConstante(linhaBruta, dart) {
   if (!dart) return /\bstatic\s+final\b/.test(linhaBruta);
   return /\b(static\s+(const|final)|const)\s+(String\s+)?[A-Za-z_]\w*\s*=/.test(linhaBruta);
+}
+
+/** Índices das linhas que estão dentro dos parênteses de uma anotação (@Nome( ... )), mesmo em várias linhas. */
+function linhasEmAnotacao(codigo) {
+  const texto = codigo.join('\n');
+  const linhas = new Set();
+  const regex = /@[A-Za-z_$][\w$.]*\s*\(/g;
+  let achado = regex.exec(texto);
+  while (achado) {
+    let nivel = 1;
+    let linha = texto.slice(0, achado.index).split('\n').length - 1;
+    let p = achado.index + achado[0].length;
+    linhas.add(linha);
+    for (; p < texto.length && nivel > 0; p += 1) {
+      if (texto[p] === '\n') { linha += 1; linhas.add(linha); }
+      else if (texto[p] === '(') nivel += 1;
+      else if (texto[p] === ')') nivel -= 1;
+    }
+    regex.lastIndex = p;
+    achado = regex.exec(texto);
+  }
+  return linhas;
 }
 
 function verificarArquivo(caminho, texto) {
@@ -291,9 +328,11 @@ function verificarArquivo(caminho, texto) {
 
   const dispensaTexto = ehTeste(caminho) || NOME_TEXTOS.test(nome) || /[\\/](messages|constants|l10n)[\\/]/.test(caminho);
   if (!dispensaTexto) {
+    const emAnotacao = linhasEmAnotacao(codigo);
     literais.filter((l) => ehTextoDeNegocio(l.texto)).forEach((l) => {
       const bruta = brutas[l.linha] || '';
-      const dispensado = bruta.trim().startsWith('@') || LINHA_DE_LOG.test(bruta) || declaraConstante(bruta, dart);
+      const dispensado = bruta.trim().startsWith('@') || emAnotacao.has(l.linha) || LINHA_DE_LOG.test(bruta)
+        || declaraConstante(bruta, dart);
       if (!dispensado) {
         falha('Q-05/Q-07', l.linha, `texto fixo "${l.texto.trim().slice(0, 40)}"; mova para constante ou para a classe de mensagens.`);
       }

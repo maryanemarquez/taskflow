@@ -7,7 +7,7 @@ Configurações que verificam as regras obrigatórias da skill `padrao-codigo`. 
 | Java/Spring | `java/checkstyle.xml` → `<modulo>/config/checkstyle.xml` | Q-01, Q-03, Q-04, Q-05 (números), Q-08, Q-09 (imports) |
 | Java/Spring | `java/pmd-ruleset.xml` → `<modulo>/config/pmd-ruleset.xml` | Q-09 (código morto) |
 | Java/Spring | `java/QualidadeArquiteturaTest.java.txt` → `<modulo>/src/test/java/<pacote>/QualidadeArquiteturaTest.java` | Q-06 (log centralizado, sem saída direta) |
-| Java/Spring | `java/pom-plugins.xml` | Trechos do `pom.xml`: Checkstyle, PMD, CPD (alerta), JaCoCo com mínimo, ArchUnit |
+| Java/Spring | `java/pom-plugins.xml` | Trechos do `pom.xml`: Checkstyle, PMD, CPD (alerta), JaCoCo com mínimo, ArchUnit; o mínimo de cobertura vem da propriedade cobertura.minima |
 | Flutter Web | `flutter/analysis_options.yaml` → `<modulo>/analysis_options.yaml` | Q-06, Q-08, Q-09 e formatação de 120 colunas |
 
 As regras Q-02 (tamanho de classe), Q-05/Q-07 (texto fixo) e as de Flutter para Q-01 a Q-04 são verificadas pelo modo `qualidade` do `tools/gates/verificar.js`, que não precisa de configuração.

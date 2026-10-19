@@ -13,7 +13,7 @@ const { verificarArquivo } = require('./lib/qualidade');
 const { lerModulos, pastasDaStack, lerCoberturaMinima } = require('./lib/modulos');
 
 const CLI = path.join(__dirname, 'verificar.js');
-const HISTORIA = fs.readFileSync(path.join(__dirname, 'fixtures', 'historia-valida.md'), 'utf8');
+const HISTORIA = fs.readFileSync(path.join(__dirname, 'fixtures', 'historia-valida.md'), 'utf8').replace(/\r\n?/g, '\n');
 
 const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'sdd-'));
 const escrever = (arquivo, conteudo) => {
@@ -283,6 +283,39 @@ test('qualidade Dart: interpolação e strings brutas não quebram a contagem', 
   assert.deepEqual(verificarArquivo('tela.dart', fonte), []);
 });
 
+const construtorDart = (parametros, antes = '') => classeDart(`${antes}  const Tela({${parametros}});\n`);
+const QUATRO_PARAMETROS = 'super.key, required this.a, required this.b, required this.c';
+const soQ04 = (lista) => lista.filter((e) => e.mensagem.startsWith('Q-04'));
+
+test('qualidade Dart: construtor sem corpo com 4 parâmetros gera uma violação Q-04', () => {
+  assert.equal(soQ04(verificarArquivo('tela.dart', construtorDart(QUATRO_PARAMETROS))).length, 1);
+});
+
+test('qualidade Dart: construtor sem corpo com 3 parâmetros passa', () => {
+  const tres = 'required this.a, required this.b, required this.c';
+  assert.deepEqual(verificarArquivo('tela.dart', construtorDart(tres)), []);
+});
+
+test('qualidade Dart: construtor sem corpo com exceção justificada passa', () => {
+  const comExcecao = construtorDart(QUATRO_PARAMETROS, '  // qualidade-exceção: injeção de dependências\n');
+  assert.deepEqual(verificarArquivo('tela.dart', comExcecao), []);
+});
+
+test('qualidade Java: enum com argumentos e ";" não gera Q-04', () => {
+  const fonte = 'package a.b;\n\nenum Cor {\n    A(1, 2, 3, 4);\n\n    Cor(int... valores) {\n        int x = valores.length;\n    }\n}\n';
+  assert.deepEqual(soQ04(verificarArquivo('Cor.java', fonte)), []);
+});
+
+test('qualidade Java: texto em anotação de várias linhas é dispensado', () => {
+  const anotada = classeJava('    @Schema(\n        description = "Nome do usuário")\n    String nome;\n');
+  assert.deepEqual(verificarArquivo('Servico.java', anotada).filter((e) => e.mensagem.startsWith('Q-05/Q-07')), []);
+});
+
+test('qualidade Java: o mesmo texto fora de anotação continua gerando Q-05/Q-07', () => {
+  const solta = classeJava('    void a() {\n        throw new IllegalArgumentException("E-mail obrigatório");\n    }\n');
+  assert.ok(contem(verificarArquivo('Servico.java', solta), 'Q-05/Q-07'));
+});
+
 // ---------- módulos ----------
 
 const AGENTS = `# AGENTS
@@ -359,4 +392,106 @@ test('CLI: entrega com --testes auto usa as pastas do AGENTS.md', () => {
   assert.equal(rodar('entrega', pasta, '--testes', 'auto').status, 1);
   const semAgents = montarEntrega();
   assert.equal(rodar('entrega', semAgents.pasta, '--testes', 'auto').status, 2);
+});
+
+// ---------- modo "modulos" (validação) e modo "config" ----------
+
+const rodarEm = (pasta, ...args) => spawnSync(process.execPath, [CLI, ...args], { encoding: 'utf8', cwd: pasta });
+const comSkills = (raiz, ...skills) => skills.forEach((s) => escrever(path.join(raiz, 'ai', 'skills', s, 'SKILL.md'), '---\n'));
+const LINHA_COBERTURA = '- Cobertura mínima de testes: `80%`\n';
+
+test('CLI modulos: sem AGENTS.md e sem template, sai com 2', () => {
+  const resultado = rodarEm(tmp(), 'modulos', 'stack-java-spring');
+  assert.equal(resultado.status, 2);
+  assert.match(resultado.stderr, /AGENTS\.md não encontrado/);
+});
+
+test('CLI modulos: sem AGENTS.md, com o template, trata como o repositório do framework', () => {
+  const raiz = tmp();
+  escrever(path.join(raiz, 'AGENTS.template.md'), '# modelo\n');
+  const resultado = rodarEm(raiz, 'modulos', 'stack-java-spring');
+  assert.equal(resultado.status, 0, resultado.stderr);
+  assert.equal(resultado.stdout, '');
+  assert.match(resultado.stderr, /AVISO: AGENTS\.md ausente/);
+});
+
+test('CLI modulos: tabela só com marcadores de modelo sai com 2', () => {
+  const raiz = tmp();
+  escrever(path.join(raiz, 'AGENTS.md'), '## Módulos\n\n| Módulo | Pasta | Skill de stack |\n|---|---|---|\n| `<backend>` | `<backend/>` | `<stack>` |\n');
+  const resultado = rodarEm(raiz, 'modulos', 'stack-java-spring');
+  assert.equal(resultado.status, 2);
+  assert.match(resultado.stderr, /nenhum módulo preenchido/);
+});
+
+test('CLI modulos: módulo com skill inexistente em ai/skills sai com 2', () => {
+  const raiz = tmp();
+  escrever(path.join(raiz, 'AGENTS.md'), AGENTS);
+  comSkills(raiz, 'stack-java-spring');
+  const resultado = rodarEm(raiz, 'modulos', 'stack-java-spring');
+  assert.equal(resultado.status, 2);
+  assert.match(resultado.stderr, /módulo "frontend": skill "stack-flutter-web"/);
+});
+
+test('CLI modulos: AGENTS.md válido e skill existente imprime a pasta', () => {
+  const raiz = tmp();
+  escrever(path.join(raiz, 'AGENTS.md'), AGENTS);
+  comSkills(raiz, 'stack-java-spring', 'stack-flutter-web');
+  const resultado = rodarEm(raiz, 'modulos', 'stack-java-spring');
+  assert.equal(resultado.status, 0, resultado.stderr);
+  assert.equal(resultado.stdout, 'backend\n');
+});
+
+test('CLI modulos: nenhum módulo da skill consultada sai com 0 e saída vazia', () => {
+  const raiz = tmp();
+  escrever(path.join(raiz, 'AGENTS.md'), AGENTS);
+  comSkills(raiz, 'stack-java-spring', 'stack-flutter-web');
+  const resultado = rodarEm(raiz, 'modulos', 'stack-python');
+  assert.equal(resultado.status, 0, resultado.stderr);
+  assert.equal(resultado.stdout, '');
+});
+
+test('CLI config: cobertura-minima lê o valor do AGENTS.md', () => {
+  const raiz = tmp();
+  escrever(path.join(raiz, 'AGENTS.md'), LINHA_COBERTURA);
+  const resultado = rodarEm(raiz, 'config', 'cobertura-minima');
+  assert.equal(resultado.status, 0, resultado.stderr);
+  assert.equal(resultado.stdout, '80\n');
+});
+
+test('CLI config: java sem a linha usa o padrão 21', () => {
+  const raiz = tmp();
+  escrever(path.join(raiz, 'AGENTS.md'), LINHA_COBERTURA);
+  const resultado = rodarEm(raiz, 'config', 'java');
+  assert.equal(resultado.status, 0, resultado.stderr);
+  assert.equal(resultado.stdout, '21\n');
+});
+
+test('CLI config: java lê a versão declarada no AGENTS.md', () => {
+  const raiz = tmp();
+  escrever(path.join(raiz, 'AGENTS.md'), `${LINHA_COBERTURA}- Versão do Java: \`17\`\n`);
+  const resultado = rodarEm(raiz, 'config', 'java');
+  assert.equal(resultado.status, 0, resultado.stderr);
+  assert.equal(resultado.stdout, '17\n');
+});
+
+test('CLI config: flutter sem a linha usa o padrão stable', () => {
+  const raiz = tmp();
+  escrever(path.join(raiz, 'AGENTS.md'), LINHA_COBERTURA);
+  const resultado = rodarEm(raiz, 'config', 'flutter');
+  assert.equal(resultado.status, 0, resultado.stderr);
+  assert.equal(resultado.stdout, 'stable\n');
+});
+
+test('CLI config: chave desconhecida sai com 2 e lista as válidas', () => {
+  const raiz = tmp();
+  escrever(path.join(raiz, 'AGENTS.md'), LINHA_COBERTURA);
+  const resultado = rodarEm(raiz, 'config', 'chave-invalida');
+  assert.equal(resultado.status, 2);
+  assert.match(resultado.stderr, /cobertura-minima, java, flutter/);
+});
+
+test('CLI config: cobertura-minima sem a linha de cobertura sai com 2', () => {
+  const raiz = tmp();
+  escrever(path.join(raiz, 'AGENTS.md'), '# sem cobertura\n');
+  assert.equal(rodarEm(raiz, 'config', 'cobertura-minima').status, 2);
 });

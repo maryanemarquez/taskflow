@@ -7,6 +7,7 @@
  * Qualquer falha inesperada termina com código 2 (nunca aprova por engano).
  */
 
+const fs = require('node:fs');
 const path = require('node:path');
 const { ErroUso, lerArquivo } = require('./lib/util');
 const { verificarHistoria } = require('./lib/historia');
@@ -15,6 +16,7 @@ const { verificarLcov } = require('./lib/lcov');
 const { verificarQualidade } = require('./lib/qualidade');
 const {
   modulosDoProjeto, pastasDeTeste, pastasDaStack, localizarAgents, lerCoberturaMinima,
+  validarModulos, lerConfiguracao, CHAVES_CONFIG,
 } = require('./lib/modulos');
 
 const AJUDA = `Uso:
@@ -23,6 +25,7 @@ const AJUDA = `Uso:
   node tools/gates/verificar.js lcov <lcov.info> --min <0-100 | auto>
   node tools/gates/verificar.js qualidade <pasta-ou-arquivo>...
   node tools/gates/verificar.js modulos <skill-de-stack> [--base <ref-git>]
+  node tools/gates/verificar.js config <cobertura-minima|java|flutter>
 
 Códigos de saída: 0 = ok, 1 = violação, 2 = erro de uso ou de ambiente.`;
 
@@ -109,10 +112,35 @@ function executarQualidade({ posicionais }) {
   return 1;
 }
 
+const AVISO_FRAMEWORK = 'AVISO: AGENTS.md ausente; AGENTS.template.md presente. '
+  + 'Tratado como o repositório do framework: nenhum módulo verificado.';
+
 function executarModulos({ posicionais, opcoes }) {
   exigir(posicionais, 1, 'modulos');
-  const { pastas } = pastasDaStack(process.cwd(), posicionais[0], opcoes.base);
+  const inicio = process.cwd();
+  if (!localizarAgents(inicio)) {
+    if (!fs.existsSync(path.join(inicio, 'AGENTS.template.md'))) {
+      throw new ErroUso('AGENTS.md não encontrado. Crie-o a partir de AGENTS.template.md.');
+    }
+    console.error(AVISO_FRAMEWORK);
+    return 0;
+  }
+  const { raiz, modulos } = modulosDoProjeto(inicio);
+  validarModulos(raiz, modulos);
+  const { pastas } = pastasDaStack(inicio, posicionais[0], opcoes.base);
   pastas.forEach((pasta) => console.log(pasta));
+  return 0;
+}
+
+function executarConfig({ posicionais }) {
+  exigir(posicionais, 1, 'config');
+  const chave = posicionais[0];
+  if (!CHAVES_CONFIG.includes(chave)) {
+    throw new ErroUso(`Chave desconhecida "${chave}". Chaves válidas: ${CHAVES_CONFIG.join(', ')}.`);
+  }
+  const agents = localizarAgents(process.cwd());
+  if (!agents) throw new ErroUso('AGENTS.md não encontrado. Crie-o a partir de AGENTS.template.md.');
+  console.log(lerConfiguracao(lerArquivo(agents), chave));
   return 0;
 }
 
@@ -122,6 +150,7 @@ const MODOS = {
   lcov: executarLcov,
   qualidade: executarQualidade,
   modulos: executarModulos,
+  config: executarConfig,
 };
 
 function principal(argumentos) {

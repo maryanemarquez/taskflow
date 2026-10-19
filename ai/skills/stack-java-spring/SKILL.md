@@ -76,8 +76,9 @@ Regras:
 | Relatório de cobertura | `target/site/jacoco/index.html` |
 
 - Exige Docker em execução (Testcontainers).
-- O `pom.xml` deve configurar o **JaCoCo** com a regra `check` no `verify`, usando o mínimo de cobertura do `AGENTS.md`. Cobertura abaixo do mínimo **faz o build falhar**.
-- O CI executa exatamente `./mvnw verify`. Se passa localmente com esse comando, passa no CI (salvo diferença de ambiente).
+- O `pom.xml` deve configurar o **JaCoCo** com a regra `check` no `verify`, lendo o mínimo da propriedade `cobertura.minima` (modelo em `ai/templates/qualidade/java/pom-plugins.xml`). O CI passa o valor do `AGENTS.md`. Cobertura abaixo do mínimo **faz o build falhar**.
+- O CI executa `bash ./mvnw -B verify` (equivalente a `./mvnw verify`; o `bash` evita falha quando o arquivo perde o bit de execução no Git). Se passa localmente, passa no CI (salvo diferença de ambiente).
+- O projeto deve ter o wrapper `mvnw` na pasta do módulo. Se o job acusar "Permission denied" em outro uso, corrija com `git update-index --chmod=+x mvnw`.
 
 ## 5. Padrão de código (`padrao-codigo`)
 

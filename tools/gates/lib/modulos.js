@@ -40,6 +40,45 @@ function lerCoberturaMinima(textoAgents) {
   return m ? Number(m[1].replace(',', '.')) : null;
 }
 
+/** Lê o valor entre crases de uma linha "- <rótulo>: `valor`" do AGENTS.md. Devolve null se não existir. */
+function lerValor(textoAgents, rotulo) {
+  const escapado = rotulo.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const m = new RegExp(`^-\\s*${escapado}:\\s*\`([^\`\\n]+)\``, 'm').exec(textoAgents);
+  return m ? m[1].trim() : null;
+}
+
+const CONFIGURACOES = {
+  java: { rotulo: 'Versão do Java', padrao: '21' },
+  flutter: { rotulo: 'Versão do Flutter', padrao: 'stable' },
+};
+const CHAVES_CONFIG = ['cobertura-minima', ...Object.keys(CONFIGURACOES)];
+
+/** Valor de uma chave do modo "config", como texto. Lança ErroUso se a chave exigida não existir. */
+function lerConfiguracao(textoAgents, chave) {
+  if (chave === 'cobertura-minima') {
+    const minimo = lerCoberturaMinima(textoAgents);
+    if (minimo === null) {
+      throw new ErroUso('config cobertura-minima exige AGENTS.md com "Cobertura mínima de testes: `NN%`".');
+    }
+    return String(minimo);
+  }
+  const { rotulo, padrao } = CONFIGURACOES[chave];
+  const valor = lerValor(textoAgents, rotulo);
+  return valor === null ? padrao : valor;
+}
+
+/** Garante que a tabela "Módulos" tem linhas preenchidas e que cada skill citada existe em ai/skills. */
+function validarModulos(raiz, modulos) {
+  if (modulos.length === 0) {
+    throw new ErroUso('A tabela "Módulos" do AGENTS.md não tem nenhum módulo preenchido.');
+  }
+  const ausentes = modulos.filter((m) => !fs.existsSync(path.join(raiz, 'ai', 'skills', m.skill, 'SKILL.md')));
+  if (ausentes.length > 0) {
+    const linhas = ausentes.map((m) => `  - módulo "${m.modulo}": skill "${m.skill}" sem ai/skills/${m.skill}/SKILL.md`);
+    throw new ErroUso(`Skill inexistente na tabela "Módulos" do AGENTS.md:\n${linhas.join('\n')}`);
+  }
+}
+
 function modulosDoProjeto(inicio) {
   const agents = localizarAgents(inicio);
   if (!agents) return { agents: null, raiz: null, modulos: [] };
@@ -78,4 +117,7 @@ function pastasDaStack(inicio, skill, base) {
   return { raiz, pastas };
 }
 
-module.exports = { lerCoberturaMinima, lerModulos, localizarAgents, modulosDoProjeto, pastasDeTeste, pastasDaStack };
+module.exports = {
+  CHAVES_CONFIG, lerConfiguracao, lerCoberturaMinima, lerModulos, lerValor, localizarAgents, modulosDoProjeto,
+  pastasDeTeste, pastasDaStack, validarModulos,
+};

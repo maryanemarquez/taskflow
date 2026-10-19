@@ -19,13 +19,13 @@ class QualidadeArquiteturaTest {
     static final String CLASSE_DE_LOG = "com.exemplo.projeto.comum.log.AppLogger";
 
     @ArchTest
-    static final ArchRule semSaidaPadrao = GeneralCodingRules.NO_CLASSES_SHOULD_ACCESS_STANDARD_STREAMS;
+    static final ArchRule SEM_SAIDA_PADRAO = GeneralCodingRules.NO_CLASSES_SHOULD_ACCESS_STANDARD_STREAMS;
 
     @ArchTest
-    static final ArchRule semJavaUtilLogging = GeneralCodingRules.NO_CLASSES_SHOULD_USE_JAVA_UTIL_LOGGING;
+    static final ArchRule SEM_JAVA_UTIL_LOGGING = GeneralCodingRules.NO_CLASSES_SHOULD_USE_JAVA_UTIL_LOGGING;
 
     @ArchTest
-    static final ArchRule logSomentePelaClasseCentral = noClasses()
+    static final ArchRule LOG_SOMENTE_PELA_CLASSE_CENTRAL = noClasses()
             .that().doNotHaveFullyQualifiedName(CLASSE_DE_LOG)
             .should().dependOnClassesThat().resideInAnyPackage("org.slf4j..", "org.apache.logging..");
 }

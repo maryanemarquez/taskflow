@@ -1,8 +1,11 @@
 <!--
   Trechos para o pom.xml do módulo Java. Copie para <dependencies> e <build><plugins>.
   Versões de referência: confirme as mais recentes estáveis ao copiar.
-  O mínimo de cobertura (0.80) deve ser igual ao "Cobertura mínima de testes" do AGENTS.md.
+  O mínimo de cobertura vem da propriedade cobertura.minima (padrão 0.80). O CI a sobrescreve com o valor do AGENTS.md; localmente, ajuste a propriedade ou passe -Dcobertura.minima=0.80.
 -->
+
+<!-- <properties> -->
+<cobertura.minima>0.80</cobertura.minima>
 
 <!-- <dependencies> -->
 <dependency>
@@ -97,7 +100,7 @@
               <limit>
                 <counter>LINE</counter>
                 <value>COVEREDRATIO</value>
-                <minimum>0.80</minimum>
+                <minimum>${cobertura.minima}</minimum>
               </limit>
             </limits>
           </rule>

@@ -6,11 +6,9 @@
 
 - Nome: `TaskFlow`
 - Versão vigente do projeto: `V1`
-- Versão do framework (`sdd-framework`): `v0.1.1`
+- Versão do framework (`sdd-framework`): `v0.1.0`
 - Idioma dos artefatos (documentos, histórias, relatórios): português do Brasil
 - Cobertura mínima de testes: `80%`
-- Versão do Java: `21`
-- Versão do Flutter: `stable`
 - RNFs com meta mensurável exigidos na Definition of Done: RNF-05, RNF-06, RNF-08
 
 ## Módulos

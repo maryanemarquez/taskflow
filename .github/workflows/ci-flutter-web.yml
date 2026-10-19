@@ -30,10 +30,24 @@ jobs:
           pastas="$(node tools/gates/verificar.js modulos stack-flutter-web --base "$BASE" | paste -sd, -)"
           echo "pastas=${pastas}" >> "$GITHUB_OUTPUT"
           echo "Módulos Flutter alterados: ${pastas:-nenhum}"
-      - uses: subosito/flutter-action@v2
+      - name: Ler configuração do projeto
+        id: cfg
         if: steps.modulos.outputs.pastas != ''
+        run: |
+          set -euo pipefail
+          valor="$(node tools/gates/verificar.js config flutter)"
+          if [[ "$valor" =~ ^[0-9]+(\.[0-9]+){1,2}$ ]]; then tipo=versao; else tipo=canal; fi
+          echo "valor=${valor}" >> "$GITHUB_OUTPUT"
+          echo "tipo=${tipo}" >> "$GITHUB_OUTPUT"
+      - uses: subosito/flutter-action@v2
+        if: steps.modulos.outputs.pastas != '' && steps.cfg.outputs.tipo == 'canal'
         with:
-          channel: stable # ajuste para a versão definida nas decisões técnicas do projeto
+          channel: ${{ steps.cfg.outputs.valor }}
+          cache: true
+      - uses: subosito/flutter-action@v2
+        if: steps.modulos.outputs.pastas != '' && steps.cfg.outputs.tipo == 'versao'
+        with:
+          flutter-version: ${{ steps.cfg.outputs.valor }}
           cache: true
       - name: Verificar módulos
         if: steps.modulos.outputs.pastas != ''

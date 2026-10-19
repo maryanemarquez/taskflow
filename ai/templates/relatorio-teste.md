@@ -16,7 +16,7 @@ Status permitidos: `Rastreado e correto`, `Rastreado mas insuficiente`, `Não ra
 
 | ID | Teste (arquivo e nome) | Status |
 |---|---|---|
-| HIST-XXX-<dominio>/C01 | <caminho do arquivo: nome do teste> | Rastreado e correto |
+| HIST-XXX-<dominio>/C01 | <caminho do arquivo: nome do teste> | <Rastreado e correto | Rastreado mas insuficiente | Não rastreado> |
 
 ## RNFs verificados
 
@@ -48,4 +48,4 @@ Status permitidos: `Rastreado e correto`, `Rastreado mas insuficiente`, `Não ra
 
 ## Veredito
 
-Veredito: LIBERADO
+Veredito: <LIBERADO ou BLOQUEADO>

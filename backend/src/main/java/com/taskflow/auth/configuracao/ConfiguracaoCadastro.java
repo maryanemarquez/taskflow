@@ -1,0 +1,17 @@
+package com.taskflow.auth.configuracao;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+
+@Configuration
+public class ConfiguracaoCadastro {
+
+    @Bean
+    PasswordEncoder passwordEncoder(
+            @Value("${taskflow.security.bcrypt-strength:12}") int forca) {
+        return new BCryptPasswordEncoder(forca);
+    }
+}

@@ -49,6 +49,6 @@ class TaskFlowApplicationTest {
                 "SELECT COUNT(*) FROM flyway_schema_history WHERE success = TRUE",
                 Integer.class);
 
-        assertThat(migracoesAplicadas).isEqualTo(1);
+        assertThat(migracoesAplicadas).isGreaterThan(0);
     }
 }

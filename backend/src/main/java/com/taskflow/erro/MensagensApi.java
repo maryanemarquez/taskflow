@@ -1,10 +1,18 @@
 package com.taskflow.erro;
 
+import java.util.Map;
+
 public final class MensagensApi {
 
     public static final String PREFIXO_TIPO = "urn:taskflow:erro:";
     public static final String CODIGO_VALIDACAO = "VALIDACAO";
     public static final String CODIGO_ERRO_INTERNO = "ERRO_INTERNO";
+    public static final String CODIGO_TAMANHO_EXCEDIDO = "TAMANHO_EXCEDIDO";
+    public static final String CODIGO_SENHA_FORA_DA_POLITICA = "SENHA_FORA_DA_POLITICA";
+    public static final String CAMPO_SENHA = "senha";
+    public static final String CAMPO_NOME = "nome";
+    public static final String CAMPO_EMAIL = "email";
+    public static final String MENSAGEM_CAMPO_INVALIDO = "O valor informado é inválido.";
     public static final String TITULO_VALIDACAO = "Dados inválidos";
     public static final String DETALHE_VALIDACAO = "Um ou mais campos são inválidos.";
     public static final String TITULO_ERRO_INTERNO = "Erro interno";
@@ -25,5 +33,12 @@ public final class MensagensApi {
         return CODIGO_VALIDACAO.equals(codigo)
                 ? DETALHE_VALIDACAO
                 : DETALHE_ERRO_INTERNO;
+    }
+
+    public static Map<String, String> campo(String nome, String codigoCampo) {
+        return Map.of(
+                "campo", nome,
+                "codigo", codigoCampo,
+                "mensagem", MENSAGEM_CAMPO_INVALIDO);
     }
 }

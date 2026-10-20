@@ -109,6 +109,53 @@ class CadastroAuthIntegrationTest {
         assertThat(contar("usuario_workspace")).isZero();
     }
 
+    @Test
+    @DisplayName("HIST-001-auth/C05 - senha com 7 caracteres é rejeitada")
+    void senhaComSeteCaracteresERejeitada() throws Exception {
+        enviarCadastro("Eli", "eli.c05@taskflow.invalid", "abc1234")
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.codigo").value("VALIDACAO"))
+                .andExpect(jsonPath("$.erros[0].codigo").value("SENHA_FORA_DA_POLITICA"));
+
+        assertNenhumRegistroDeCadastro();
+    }
+
+    @Test
+    @DisplayName("HIST-001-auth/C06 - senha sem número é rejeitada")
+    void senhaSemNumeroERejeitada() throws Exception {
+        enviarCadastro("Fabi", "fabi.c06@taskflow.invalid", "abcdefgh")
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.codigo").value("VALIDACAO"))
+                .andExpect(jsonPath("$.erros[0].codigo").value("SENHA_FORA_DA_POLITICA"));
+
+        assertNenhumRegistroDeCadastro();
+    }
+
+    @Test
+    @DisplayName("HIST-001-auth/C07 - nome com 101 caracteres é rejeitado")
+    void nomeComCentoEUmCaracteresERejeitado() throws Exception {
+        enviarCadastro("G".repeat(101), "gabi.c07@taskflow.invalid", "senha1234")
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.codigo").value("VALIDACAO"))
+                .andExpect(jsonPath("$.erros[0].codigo").value("TAMANHO_EXCEDIDO"));
+
+        assertNenhumRegistroDeCadastro();
+    }
+
+    @Test
+    @DisplayName("HIST-001-auth/C08 - e-mail com 151 caracteres é rejeitado")
+    void emailComCentoECinquentaEUmCaracteresERejeitado() throws Exception {
+        String email = "a".repeat(138) + "@test.invalid";
+        assertThat(email).hasSize(151);
+
+        enviarCadastro("Hugo", email, "senha1234")
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.codigo").value("VALIDACAO"))
+                .andExpect(jsonPath("$.erros[0].codigo").value("TAMANHO_EXCEDIDO"));
+
+        assertNenhumRegistroDeCadastro();
+    }
+
     private org.springframework.test.web.servlet.ResultActions enviarCadastro(
             String nome,
             String email,
@@ -123,5 +170,11 @@ class CadastroAuthIntegrationTest {
 
     private int contar(String tabela) {
         return jdbcTemplate.queryForObject("SELECT COUNT(*) FROM " + tabela, Integer.class);
+    }
+
+    private void assertNenhumRegistroDeCadastro() {
+        assertThat(contar("usuario")).isZero();
+        assertThat(contar("workspace")).isZero();
+        assertThat(contar("usuario_workspace")).isZero();
     }
 }

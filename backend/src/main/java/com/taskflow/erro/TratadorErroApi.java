@@ -45,7 +45,7 @@ public class TratadorErroApi {
         problema.setInstance(URI.create(requisicao.getRequestURI()));
         problema.setProperty("codigo", MensagensApi.CODIGO_VALIDACAO);
         problema.setProperty("erros", List.of(
-                MensagensApi.campo(MensagensApi.CAMPO_SENHA, erro.codigoCampo())));
+                MensagensApi.campo(erro.campo(), erro.codigoCampo())));
         return ResponseEntity.badRequest()
                 .contentType(MediaType.APPLICATION_PROBLEM_JSON)
                 .body(problema);

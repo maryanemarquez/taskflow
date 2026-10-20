@@ -10,6 +10,8 @@ public final class MensagensApi {
     public static final String CODIGO_TAMANHO_EXCEDIDO = "TAMANHO_EXCEDIDO";
     public static final String CODIGO_SENHA_FORA_DA_POLITICA = "SENHA_FORA_DA_POLITICA";
     public static final String CAMPO_SENHA = "senha";
+    public static final String CAMPO_NOME = "nome";
+    public static final String CAMPO_EMAIL = "email";
     public static final String MENSAGEM_CAMPO_INVALIDO = "O valor informado é inválido.";
     public static final String TITULO_VALIDACAO = "Dados inválidos";
     public static final String DETALHE_VALIDACAO = "Um ou mais campos são inválidos.";

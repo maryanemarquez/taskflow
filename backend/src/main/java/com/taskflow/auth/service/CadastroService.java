@@ -16,6 +16,8 @@ public class CadastroService {
 
     private static final int MINIMO_CARACTERES_SENHA = 8;
     private static final int MAXIMO_BYTES_SENHA = 72;
+    private static final int MAXIMO_CARACTERES_NOME = 100;
+    private static final int MAXIMO_CARACTERES_EMAIL = 150;
     private static final String PADRAO_LETRA = ".*\\p{L}.*";
     private static final String PADRAO_NUMERO = ".*\\d.*";
     private final CadastroRepository repository;
@@ -37,9 +39,10 @@ public class CadastroService {
 
     @Transactional
     public SessaoResponse cadastrar(CadastroRequest cadastro) {
-        validarSenha(cadastro.senha());
         String nome = cadastro.nome().trim();
         String email = cadastro.email().trim().toLowerCase(Locale.ROOT);
+        validarSenha(cadastro.senha());
+        validarNomeEmail(nome, email);
         long usuarioId = repository.criarUsuario(new DadosNovoUsuario(
                 nome, email, passwordEncoder.encode(cadastro.senha()), clock.instant()));
         long workspaceId = repository.criarWorkspace(
@@ -48,11 +51,20 @@ public class CadastroService {
         return tokenSessaoService.emitir(usuarioId);
     }
 
+    private void validarNomeEmail(String nome, String email) {
+        if (nome.codePointCount(0, nome.length()) > MAXIMO_CARACTERES_NOME) {
+            throw ErroCadastro.nomeComTamanhoExcedido();
+        }
+        if (email.codePointCount(0, email.length()) > MAXIMO_CARACTERES_EMAIL) {
+            throw ErroCadastro.emailComTamanhoExcedido();
+        }
+    }
+
     private void validarSenha(String senha) {
         if (senha.getBytes(StandardCharsets.UTF_8).length > MAXIMO_BYTES_SENHA) {
             throw ErroCadastro.senhaComTamanhoExcedido();
         }
-        if (senha.length() < MINIMO_CARACTERES_SENHA
+        if (senha.codePointCount(0, senha.length()) < MINIMO_CARACTERES_SENHA
                 || !senha.matches(PADRAO_LETRA)
                 || !senha.matches(PADRAO_NUMERO)) {
             throw ErroCadastro.senhaForaDaPolitica();

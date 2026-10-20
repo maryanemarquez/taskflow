@@ -1,0 +1,25 @@
+export const MESSAGES = {
+  brand: 'TaskFlow',
+  brandMark: 'T',
+  registration: {
+    title: 'Crie sua conta',
+    subtitle: 'Informe seus dados para começar.',
+    submit: 'Criar minha conta',
+    loading: 'Enviando…',
+    name: 'Nome',
+    email: 'E-mail',
+    password: 'Senha',
+    passwordHint: 'Use ao menos 8 caracteres, com uma letra e um número.',
+    required: 'Este campo é obrigatório.',
+    invalidEmail: 'Informe um e-mail válido.',
+    nameTooLong: 'Use no máximo 100 caracteres.',
+    emailTooLong: 'Use no máximo 150 caracteres.',
+    passwordTooLong: 'A senha é muito longa.',
+    passwordPolicy: 'A senha precisa ter ao menos 8 caracteres, com letra e número.',
+    genericError: 'Não foi possível concluir o cadastro. Tente novamente.',
+  },
+  initialWorkspace: {
+    greeting: (name: string) => `Olá, ${name}`,
+    unavailable: 'Não foi possível carregar os dados da sessão.',
+  },
+} as const;

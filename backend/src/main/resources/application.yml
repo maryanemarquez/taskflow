@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: taskflow-backend
+  profiles:
+    default: dev
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  flyway:
+    enabled: true

@@ -25,7 +25,7 @@ const AJUDA = `Uso:
   node tools/gates/verificar.js lcov <lcov.info> --min <0-100 | auto>
   node tools/gates/verificar.js qualidade <pasta-ou-arquivo>...
   node tools/gates/verificar.js modulos <skill-de-stack> [--base <ref-git>]
-  node tools/gates/verificar.js config <cobertura-minima|java|flutter>
+  node tools/gates/verificar.js config <cobertura-minima|java|node>
 
 Códigos de saída: 0 = ok, 1 = violação, 2 = erro de uso ou de ambiente.`;
 

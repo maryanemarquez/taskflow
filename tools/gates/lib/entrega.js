@@ -7,7 +7,7 @@ const {
 } = require('./util');
 const { extrairCenarios } = require('./historia');
 
-const EXTENSOES_TESTE = ['.java', '.kt', '.dart', '.js', '.ts', '.py', '.go', '.cs'];
+const EXTENSOES_TESTE = ['.java', '.kt', '.js', '.jsx', '.ts', '.tsx', '.py', '.go', '.cs'];
 const STATUS_VALIDOS = ['Rastreado e correto', 'Rastreado mas insuficiente', 'Não rastreado'];
 const CLASSIFICACOES = ['Falha de código', 'Falha de história/critério mal definido'];
 const REGEX_ID_QUALIFICADO = /\bHIST-\d{3}-[a-z0-9]+(?:-[a-z0-9]+)*\/C\d{2,}\b/g;

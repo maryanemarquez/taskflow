@@ -1,77 +1,72 @@
 # Índice da Referência Visual — TaskFlow V1
 
-**Data:** 17/10/2026
-**Referência:** `rf-taskflow` (Vite + React + TypeScript + Supabase), mantida **fora do repositório**; o caminho local está na coluna "Referência externa" do módulo `frontend` no `AGENTS.md`
+**Data:** 20/10/2026
+**Referência:** `taskflow-trailblazer` (Vite + React + TypeScript), **versionada neste repositório em `docs/referencia-visual/`, somente leitura**
 **Telas de destino:** `docs/especificacao/TaskFlow_V1_Especificacao.md`, seção 6
+**Frontend de destino:** React Native Web (Expo + Expo Router)
 
-## 1. Finalidade e status
+> A fronteira de uso está no `AGENTS.md`, seção "Referência visual".
 
-Este índice diz ao `construtor` do módulo `frontend` quais partes da referência visual correspondem às telas da V1 e quais devem ser **ignoradas** por estarem fora do escopo. Como a referência não está no repositório, este índice (que está) é o único registro versionado do que dela se usa. A fronteira de uso está no `AGENTS.md`, seção "Referência externa".
+## 1. Finalidade
 
-> **Status: classificação preliminar.** O índice foi montado **apenas a partir dos nomes dos arquivos** da referência — o conteúdo deles não foi aberto (a sessão que o criou não tem acesso à pasta). Por isso há itens marcados "validar". **A validação deste índice é a primeira tarefa do frontend**, na história de `fundacao` (Backlog): o `construtor` do `frontend` ou o desenvolvedor abre a referência, resolve os itens ❓ e ajusta este arquivo antes de qualquer tela ser construída.
+Mapeia cada tela da V1 para a parte correspondente da referência e diz o que reaproveitar em React Native Web. Substitui o índice anterior, que era uma classificação preliminar feita só pelos nomes de arquivos da referência antiga. A nova referência foi lida integralmente.
 
-### Legenda
+Regras de uso e conteúdo da pasta: `docs/referencia-visual/LEIA-ME.md`.
+
+### Legenda de reuso
 
 | Marca | Significado |
 |---|---|
-| ✅ Liberada | Pode ser usada como referência visual da tela da V1 |
-| ⚠️ Parcial | Usar somente o layout dos elementos que existem na V1; ignorar o restante |
-| ❌ Ignorar | Fora da V1; não implementar |
-| ❓ Validar | Não foi possível classificar pelo nome; **não implementar** até validar |
+| 🟢 Direto | Reaproveitar com ajustes mínimos (TypeScript puro, textos, dados) |
+| 🟡 Adaptar | Reaproveitar a ideia e converter (tokens, rotas) |
+| 🔵 Visual | Usar só como referência visual e reescrever em componentes RN |
+| ⚪ Fora | Não entra na V1 |
 
-## 2. Telas da Especificação V1 → referência
+## 2. Telas da V1 → referência
 
-| Tela da V1 (Spec §6) | Referência provável | Marca | Observação |
+Seções do briefing: `docs/referencia-visual/briefing-referencia-visual.md`, §7. Componentes: `catalogo-componentes.md`.
+
+| Tela da V1 | Variante / componente de referência | Reuso | Observação |
 |---|---|---|---|
-| 1. Login | `pages/Auth.tsx` | ⚠️ Parcial | Usar só o visual. A tela mistura lógica de autenticação (Supabase), que nunca é usada. |
-| 2. Cadastro (com e sem convite) | `pages/Auth.tsx` | ⚠️ Parcial | Visual dos campos; a V1 pede só nome, e-mail e senha (ou nome e senha, por convite). |
-| 3. Convite Expirado ou Inválido | — | Sem equivalente | Compor com os padrões visuais de `Auth.tsx` e `NotFound.tsx`. |
-| 4. Solicitar Recuperação de Senha | — | Sem equivalente | Compor com os padrões visuais de `Auth.tsx`. |
-| 5. Redefinir Senha | — | Sem equivalente | Compor com os padrões visuais de `Auth.tsx`. |
-| 6. Dashboard | `pages/Index.tsx` | ⚠️ Parcial | Usar `StatCard` (contagem por status) e `TaskCard` ("Minhas tarefas"). Gráficos de atividade e anéis de progresso são métricas avançadas (fora da V1). |
-| 7. Listagem de Projetos | `pages/Projects.tsx` | ⚠️ Parcial | Na criação, a V1 tem só o campo nome; ignorar demais campos de `CreateProjectDialog.tsx`. |
-| 8. Detalhe do Projeto | `pages/ProjectDetail.tsx`, `pages/Tasks.tsx` | ⚠️ Parcial | Kanban, Lista e filtros da V1 (responsável, status, tag, prazo). Ignorar o que extrapolar a V1. |
-| 9. Criação/Edição de Tarefa | `components/tasks/CreateTaskDialog.tsx`, `components/tasks/TaskContent.tsx`, `pages/TaskDetail.tsx` | ⚠️ Parcial | Usar só os campos da V1: título, descrição, prioridade, tags, prazo e responsável. Ignorar subtarefas, comentários, anexos, tipos de tarefa e demais seções. Sem campo de status no formulário. |
-| 10. Membros do Workspace | `pages/Team.tsx` | ⚠️ Parcial | Listagem, convidar, convites pendentes e remover. Ignorar cargos/permissões personalizadas (V2). |
-| 11. Busca Global | `components/layout/GlobalSearch.tsx` | ✅ Liberada | Resultados de tarefas e projetos. |
-| 12. Configurações de Perfil | `pages/Settings.tsx` | ⚠️ Parcial | Somente nome e senha. Ignorar outras seções de configuração. |
-| 13. Sem Workspace | — | Sem equivalente | Compor com os padrões visuais de `NotFound.tsx` (estado informativo com um botão). |
+| 1. Login | `AuthView` · login | 🔵 Visual | Textos 🟢. Ignorar os botões "acessar como". |
+| 2. Cadastro (2A, 2B, 2C) | `AuthView` · cadastro, convite conta nova, convite conta existente | 🔵 Visual | A senha tem regra de 8 caracteres, letra e número, máximo de 72 bytes. |
+| 3. Convite expirado | `AuthView` · invite-invalid | 🔵 Visual | Mensagem "Este convite expirou". |
+| 4. Recuperar senha | `AuthView` · recovery | 🔵 Visual | A mensagem de resposta é sempre a mesma, exista ou não o e-mail. |
+| 5. Redefinir senha | `AuthView` · reset, reset-invalid | 🔵 Visual | Confirmação de senha obrigatória. |
+| 6. Dashboard | `DashboardView` | 🔵 Visual | Contagem por status, "Minhas tarefas", "Seus projetos". |
+| 7. Projetos | `ProjectsView`, `ProjectCard`, `ProjectForm` | 🔵 Visual | Ações de administração só para o Proprietário. |
+| 8. Detalhe do projeto | `ProjectView`, `TaskCard`, `TaskList` | 🔵 Visual | Kanban, lista e 5 filtros. |
+| 9. Tarefa | `TaskForm`, `TaskDetail` | 🔵 Visual | Sem campo de status no formulário. |
+| 10. Membros | `MembersView` | 🔵 Visual | Remoção com reatribuição. |
+| 11. Busca global | `Layout` (painel de busca) | 🔵 Visual | Regras de busca em `motor-mock/engine.ts` (`search`). |
+| 12. Configurações de perfil | `ProfileView` | 🔵 Visual | Somente nome e senha. |
+| 13. Sem workspace | `AuthView` · no-workspace | 🔵 Visual | Botão único "Sair". |
 
-## 3. Componentes e arquivos de apoio
+## 3. Arquivos de apoio
 
-| Arquivo da referência | Marca | Observação |
+| Arquivo em `docs/referencia-visual/` | Reuso | Destino previsto |
 |---|---|---|
-| `components/layout/AppLayout.tsx` | ⚠️ Parcial | Estrutura geral (barra lateral + conteúdo + topo). |
-| `components/AppSidebar.tsx` | ⚠️ Parcial | Itens de navegação da V1: Dashboard, Projetos, Membros e Configurações. Ignorar itens de relatórios, parâmetros e demais. |
-| `components/layout/GlobalSearch.tsx` | ✅ Liberada | Ver tela 11. |
-| `components/layout/ProjectSwitcher.tsx` | ❓ Validar | Troca rápida de projeto não está na Especificação V1. |
-| `components/dashboard/StatCard.tsx` | ✅ Liberada | Contagem por status. |
-| `components/dashboard/TaskCard.tsx` | ✅ Liberada | Cartão de tarefa (Kanban, Lista, "Minhas tarefas"). |
-| `components/dashboard/ActivityChart.tsx` | ❌ Ignorar | Métrica avançada (fora da V1). |
-| `components/dashboard/ProgressRing.tsx` | ❌ Ignorar | Métrica avançada (fora da V1). |
-| `components/projects/CreateProjectDialog.tsx` | ⚠️ Parcial | Somente o campo nome. |
-| `components/projects/ProjectMetrics.tsx` | ❌ Ignorar | Métricas de projeto (fora da V1). |
-| `components/projects/ProjectUnitsOverview.tsx` | ❌ Ignorar | Visão por unidades (fora da V1). |
-| `components/tasks/CreateTaskDialog.tsx` | ⚠️ Parcial | Ver tela 9. |
-| `components/tasks/TaskContent.tsx` | ⚠️ Parcial | Ver tela 9. |
-| `components/tasks/TaskActionsMenu.tsx` | ⚠️ Parcial | Somente ações da V1 (editar, excluir para o Proprietário, mudar status). |
-| `components/tasks/EditableField.tsx` | ❓ Validar | Edição em linha não está prevista na Especificação (a edição é por formulário). |
-| `components/NavLink.tsx` | ❌ Ignorar | Apoio de roteamento do React; sem valor visual. |
-| `components/ui/*` | ✅ Liberada | Componentes de interface genéricos (botões, campos, diálogos, tabelas etc.): usar apenas como referência de aparência e comportamento visual, recriando com widgets Flutter. |
-| `index.css` | ✅ Liberada | Referência de cores, tipografia, espaçamento e demais tokens visuais. |
-| `public/*` (favicon, placeholder, robots) | ❓ Validar | Sem relação com as telas da V1. |
+| `briefing-referencia-visual.md` | 🟢 Direto | Base das histórias e dos cenários Gherkin |
+| `motor-mock/engine.ts` | 🟢 Direto (com ajustes) | Mock de desenvolvimento e regras de UX do frontend. Trocar `crypto.randomUUID` e `Intl` por equivalentes de RN. As regras de negócio reais ficam no Spring. |
+| `motor-mock/engine.test.ts` | 🟢 Direto | Testes do mock (Jest) e base de cenários Gherkin e de testes de contrato do backend |
+| `motor-mock/seed.ts` | 🟢 Direto | Seed do mock e dados de teste |
+| `routes.ts` | 🟡 Adaptar | Estrutura de pastas do Expo Router |
+| `tokens/index.css` | 🟡 Adaptar | `theme.ts` (cores, raio, espaçamento, sombras, tipografia) |
+| `catalogo-componentes.md` | 🔵 Visual | Guia de construção dos componentes RN |
 
-## 4. Páginas da referência sem tela na V1
+## 4. Itens da referência fora da V1
 
-| Arquivo | Marca | Observação |
+| Item | Marca | Motivo |
 |---|---|---|
-| `pages/Reports.tsx` | ❌ Ignorar | Relatórios e métricas avançadas estão fora da V1. |
-| `pages/Parameters.tsx` | ❓ Validar | Provavelmente parâmetros/cargos de configuração (V2). Não implementar até validar. |
-| `pages/NotFound.tsx` | ⚠️ Parcial | Usar só como base visual para estados informativos (tela 13). |
+| Botões "acessar como" e seletor de papel/cenário | ⚪ Fora | Controles do protótipo |
+| Páginas, stores, hooks e integrações do protótipo anterior, `supabase/` | ⚪ Fora | Não foram trazidos |
+| Tela inicial provisória do workspace | 🔵 Visual (prevista na V1) | Está na Especificação (§6, tela 6) e no RF-01. É definida na história de `auth`. O briefing não descreve o conteúdo; proposta em `catalogo-componentes.md` ("Telas de apoio"), a aprovar no Gate 1. |
+| Sessão expirada | 🟢 Comportamento | Fora das 13 telas. Decisão: **não é tela dedicada**. Quando o refresh do token falha, o app redireciona ao login com a mensagem "Sua sessão expirou. Entre novamente.", reaproveitando a variante `expired-session` do `AuthView`. A confirmar no Gate 1 de `auth`. |
 
 ## 5. Regras de uso
 
-1. Esta classificação **não** altera a regra de fronteira do `AGENTS.md` (seção "Referência externa"): da referência usa-se apenas o aspecto visual — nunca lógica de estado, chamadas de API/Supabase, hooks de dados ou autenticação.
-2. Tela marcada ❌ ou ❓ não é implementada, mesmo que exista na referência.
-3. Em caso de dúvida sobre uma tela ou componente, o `construtor` do `frontend` registra a dúvida em Pontos em Aberto da história, em vez de decidir sozinho.
-4. Ao validar a referência, atualizar este índice (principalmente os itens ❓ e a coluna "Referência provável") e manter a data.
+1. Da referência usa-se apenas aspecto visual, textos, fluxos e estados. Regras de negócio vivem no backend.
+2. Em conflito com a documentação da V1, vale a documentação.
+3. Dúvida sobre tela ou componente: registrar em Pontos em Aberto da história, em vez de decidir sozinho.
+4. As `[LACUNA]` do briefing (§20) são resolvidas no Gate 1 da história correspondente.
+5. A pasta `docs/referencia-visual/` não é alterada por histórias de implementação. Mudanças nela são feitas só por atualização explícita da referência.

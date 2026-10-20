@@ -7,7 +7,7 @@ const path = require('node:path');
 class ErroUso extends Error {}
 
 const PASTAS_IGNORADAS = new Set([
-  'node_modules', 'target', 'build', '.dart_tool', '.git', '.gradle', 'coverage', 'generated',
+  'node_modules', 'target', 'build', 'dist', 'web-build', '.expo', '.git', '.gradle', 'coverage', 'generated',
 ]);
 
 function lerArquivo(caminho) {

@@ -1,7 +1,7 @@
 # TaskFlow — Decisões Técnicas (V1)
 
 **Versão:** V1
-**Data:** 17/10/2026
+**Data:** 17/10/2026 (revisada em 20/10/2026: frontend migrado de Flutter Web para React Native Web — DT-01 a DT-04, DT-10, DT-11, DT-15)
 **Referências:** Especificação V1, Requisitos V1, Modelo de Dados V1, Padrão de API V1
 
 ## 1. Objetivo
@@ -14,10 +14,10 @@ Cada decisão tem identificador (`DT-XX`). Um desvio de qualquer uma delas em um
 
 | ID | Tema | Decisão |
 |---|---|---|
-| DT-01 | Plataforma do cliente | Flutter Web |
-| DT-02 | Estado no Flutter | Riverpod (`flutter_riverpod`) |
-| DT-03 | Rotas no Flutter | `go_router` com URLs sem `#` |
-| DT-04 | Cliente HTTP | `dio` com interceptors |
+| DT-01 | Plataforma do cliente | React Native Web (Expo) |
+| DT-02 | Estado no frontend | TanStack Query (servidor) + Zustand (cliente) |
+| DT-03 | Rotas no frontend | Expo Router com URLs sem `#` |
+| DT-04 | Cliente HTTP | `axios` com interceptors |
 | DT-05 | Sessão | JWT de acesso (15 min) + refresh token opaco (7 dias), com rotação |
 | DT-06 | Senhas | BCrypt, política RT-01 (limite em bytes UTF-8) |
 | DT-07 | Tokens aleatórios | 32 bytes aleatórios, persistidos como SHA-256 |
@@ -32,30 +32,30 @@ Cada decisão tem identificador (`DT-XX`). Um desvio de qualquer uma delas em um
 
 ## 3. Frontend
 
-### DT-01 — Flutter Web como alvo da V1
-- **Decisão:** a V1 é entregue como aplicação web, construída com Flutter Web. Mobile nativo e desktop ficam fora do escopo.
-- **Motivo:** a especificação descreve uma aplicação web SaaS (RNF-05 e RNF-06), com links por URL (`app.taskflow.com/invite/{token}`).
-- **Consequências:** o servidor que hospeda o aplicativo deve reescrever rotas desconhecidas para o `index.html`. O desempenho e a compatibilidade seguem os navegadores do RNF-06.
+### DT-01 — React Native Web (Expo) como alvo da V1
+- **Decisão:** a V1 é entregue como aplicação web, construída com React Native Web (Expo, TypeScript). Mobile nativo e desktop ficam fora do escopo da V1, embora a base permita evoluir para eles.
+- **Motivo:** a especificação descreve uma aplicação web SaaS (RNF-05 e RNF-06), com links por URL (`app.taskflow.com/invite/{token}`). A escolha também permite reaproveitar a referência visual em React e o motor mock de desenvolvimento (`docs/referencia-visual/`).
+- **Consequências:** o aplicativo é exportado como SPA (`expo export --platform web`, saída `single`); o servidor que o hospeda deve reescrever rotas desconhecidas para o `index.html`. O desempenho e a compatibilidade seguem os navegadores do RNF-06. Variáveis `EXPO_PUBLIC_*` são públicas no pacote e nunca contêm segredo.
 
-### DT-02 — Gerenciamento de estado: Riverpod
-- **Decisão:** usar Riverpod (`flutter_riverpod`) como única biblioteca de estado. O cumprimento é verificado na revisão do PR.
-- **Motivo:** estado reativo e testável, com injeção de dependências, adequado ao TDD; evita portar padrões de estado do React 1:1.
-- **Consequências:** qualquer outra biblioteca de estado (Bloc, Provider, GetX etc.) exige atualizar esta decisão (DT-02) e a skill `stack-flutter-web`, com aprovação no Gate 1.
+### DT-02 — Gerenciamento de estado: TanStack Query + Zustand
+- **Decisão:** usar TanStack Query para o **estado de servidor** (consultas, mutações e cache) e Zustand para o **estado de cliente** (sessão e preferências de interface). Essas são as únicas bibliotecas de estado. O cumprimento é verificado na revisão do PR.
+- **Motivo:** separa dados da API de estado local, é testável (cada teste usa um `QueryClient` novo) e evita portar os padrões de estado do protótipo de referência.
+- **Consequências:** qualquer outra biblioteca de estado (Redux, MobX, Context como armazenamento global etc.) exige atualizar esta decisão (DT-02) e a skill `stack-react-native-web`, com aprovação no Gate 1.
 
-### DT-03 — Rotas: go_router
-- **Decisão:** usar `go_router`, com estratégia de URL por caminho (sem `#`).
+### DT-03 — Rotas: Expo Router
+- **Decisão:** usar Expo Router (rotas por arquivo na pasta `app/`), com URLs por caminho (sem `#`) na web.
 - **Motivo:** os links de convite e de recuperação de senha precisam abrir diretamente uma tela (`/invite/{token}`, redefinição de senha) e aceitar redirecionamentos de autenticação.
-- **Consequências:** guardas de rota: sem sessão → login; sessão sem workspace → tela "Sem Workspace" (RF-39).
+- **Consequências:** os arquivos de `app/` são finos e apenas montam a tela da funcionalidade. Guardas de rota no layout raiz: sem sessão → login; sessão sem workspace → tela "Sem Workspace" (RF-39).
 
-### DT-04 — Cliente HTTP: dio
-- **Decisão:** usar `dio`, com interceptors para: anexar `Authorization: Bearer`; renovar o token de acesso de forma transparente **somente** ao receber `401` com `codigo = NAO_AUTENTICADO`; converter respostas `application/problem+json` em erros tipados (campo `codigo`).
+### DT-04 — Cliente HTTP: axios
+- **Decisão:** usar `axios`, com interceptors para: anexar `Authorization: Bearer`; renovar o token de acesso de forma transparente **somente** ao receber `401` com `codigo = NAO_AUTENTICADO`; converter respostas `application/problem+json` em erros tipados (campo `codigo`).
 - **Fila única de renovação:** o interceptor mantém uma única renovação em andamento por vez. Requisições que recebem `401 NAO_AUTENTICADO` durante ela aguardam o resultado e são repetidas uma vez com o novo token. Se a renovação falhar, a sessão é encerrada e o usuário vai ao login.
 - **Sem laço de renovação:** a própria chamada de renovação (`refresh`) nunca dispara nova renovação. Um `401` nela encerra a sessão.
 - **Abas simultâneas:** antes de encerrar a sessão por falha na renovação, o cliente confere se o refresh token armazenado mudou desde o início da tentativa (outra aba pode tê-lo renovado dentro da janela de tolerância do DT-05). Se mudou, repete a renovação uma única vez com o token novo; se não mudou, encerra a sessão.
 - **Consequências:** o cliente nunca interpreta o texto de `detail` para decidir comportamento; usa apenas `codigo`. Outros `401` (ex.: `CREDENCIAIS_INVALIDAS` no login) não disparam renovação.
 
 ### Datas no cliente
-- Datas e horas recebidas em UTC são exibidas em America/Sao_Paulo, usando o pacote `timezone`. `prazo` é tratado como data de calendário, sem conversão (Padrão de API, seção 5).
+- Datas e horas recebidas em UTC são exibidas em America/Sao_Paulo, usando `Intl.DateTimeFormat` com `timeZone: 'America/Sao_Paulo'`, isolado em um único utilitário. `prazo` é tratado como data de calendário, sem conversão (Padrão de API, seção 5).
 
 ## 4. Backend
 
@@ -67,7 +67,7 @@ Cada decisão tem identificador (`DT-XX`). Um desvio de qualquer uma delas em um
   - **Janela de tolerância (10 segundos):** o uso de um refresh token revogado por rotação até 10 segundos depois da revogação (ex.: duas abas renovando ao mesmo tempo) responde `401 NAO_AUTENTICADO` sem revogar os demais tokens. Fora da janela, é tratado como reuso: todos os refresh tokens do usuário são revogados com `REUSO_DETECTADO`.
   - Logout revoga o refresh token informado (RF-38).
 - **Motivo:** sessão revogável (RF-38, RNF-03) com custo baixo de implementação em Spring.
-- **Consequência/risco aceito:** como o cliente é Flutter Web e os tokens trafegam no corpo, eles ficam armazenados no navegador do usuário e estão expostos a XSS. A validade curta do token de acesso e a rotação do refresh token mitigam o risco. Para uma eventual produção, reavaliar o uso de cookie `HttpOnly`.
+- **Consequência/risco aceito:** como o cliente é web (React Native Web) e os tokens trafegam no corpo, eles ficam armazenados no navegador do usuário e estão expostos a XSS. A validade curta do token de acesso e a rotação do refresh token mitigam o risco. Para uma eventual produção, reavaliar o uso de cookie `HttpOnly`.
 - O papel e o workspace do usuário **não** vão no JWT (ver DT-14).
 
 ### DT-06 — Senhas
@@ -103,11 +103,11 @@ Os valores são parâmetros de configuração (com esses padrões), para facilit
 - **Decisão:** MySQL 8.x, com esquema versionado por **Flyway** (`db/migration`, arquivos `V1__descricao.sql`). Hibernate com `ddl-auto=validate` (o esquema nunca é gerado pelo ORM).
 - **Charset e collation:** `utf8mb4`, com collation padrão do banco `utf8mb4_0900_as_ci` (diferencia acentos, ignora maiúsculas e minúsculas), usada, por exemplo, na unicidade do e-mail.
 - **Política de acentos:** `tag.nome` usa `utf8mb4_0900_ai_ci` (ignora acentos e maiúsculas): `ação` e `acao` são a mesma tag. A busca global (RF-24) e o filtro por tag (RF-23) também ignoram acentos e maiúsculas, aplicando `COLLATE utf8mb4_0900_ai_ci` nas comparações.
-- **Versões:** Java LTS (21 ou superior), Spring Boot e Flutter na versão estável vigente no início do projeto, fixadas no `pom.xml` e no `pubspec.yaml`; MySQL 8.4 LTS.
+- **Versões:** Java LTS (21 ou superior), Spring Boot, Node (versão no `AGENTS.md`) e Expo SDK na versão estável vigente no início do projeto, fixadas no `pom.xml` e no `package.json`; MySQL 8.4 LTS.
 
 ### DT-11 — Estratégia de testes
 - **Backend:** JUnit5 + Mockito para testes de unidade; **Testcontainers com MySQL real** (mesma versão do ambiente) para testes de integração. H2 não é usado. Cobertura medida com JaCoCo, com o mínimo definido no `AGENTS.md` (hoje 80%).
-- **Frontend:** `flutter test` com cobertura (`--coverage`, com o mínimo definido no `AGENTS.md`).
+- **Frontend:** Jest (preset `jest-expo`) e React Native Testing Library, com cobertura (`jest --coverage`, relatório `lcov`, com o mínimo definido no `AGENTS.md`). Testes em `__tests__/`.
 - **Tempo:** o `Clock` injetado (DT-09) é usado em todo teste que dependa de expiração.
 - **E-mail:** o envio é feito por uma interface (porta `EmailSender`), substituída por um dublê nos testes.
 
@@ -131,9 +131,9 @@ Os valores são parâmetros de configuração (com esses padrões), para facilit
 ### DT-15 — Organização do código
 - Backend e frontend se organizam **por domínio**, acompanhando o backlog (`auth`, `workspace`, `membros`, `projeto`, `tarefa`, `busca-filtros`, `dashboard`, `configuracoes`).
 - Backend: separar controladores, serviços e repositórios; DTOs separados das entidades de persistência.
-- Frontend: organização por funcionalidade (dados, domínio, apresentação).
+- Frontend: organização por funcionalidade (`api`, `model`, `ui`), com rotas finas em `app/`.
 - O domínio técnico `fundacao` reúne a estrutura inicial e não tem pacote próprio de negócio.
-- O detalhamento fica nas skills de stack `stack-java-spring` e `stack-flutter-web`.
+- O detalhamento fica nas skills de stack `stack-java-spring` e `stack-react-native-web` (e `design-system-taskflow` para o visual do frontend).
 
 ## 5. Riscos aceitos na V1
 
@@ -144,15 +144,22 @@ Os valores são parâmetros de configuração (com esses padrões), para facilit
 | Envio de e-mail sem fila e sem reenvio automático (DT-12) | Aceito; o Proprietário gera novo convite |
 | Tokens expirados não são removidos do banco (`refresh_token`, `convite`, `recuperacao_senha`) | Aceito na V1; os índices por `usuario_id` mantêm as consultas rápidas. Rotina de limpeza antes de produção |
 
+## Pontos em aberto
+
+| Tema | Situação |
+|---|---|
+| Geração de tipos TypeScript a partir do OpenAPI do Spring (springdoc) para evitar divergência entre backend e frontend | Adiada. Avaliar após a história de `fundacao`. Até lá, os modelos do frontend seguem o Contrato de Integração de cada história (skill `stack-react-native-web`, R-03). |
+| Armazenamento dos tokens no navegador (memória, `sessionStorage` ou cookie `HttpOnly`) | Decidir na história de `auth`, dentro do risco aceito da DT-05. |
+
 ## 6. Onde cada decisão é aplicada
 
 As decisões são aplicadas pelo framework SDD e pelo `AGENTS.md` do projeto, sem hooks locais:
 
 | Decisão | Onde é aplicada |
 |---|---|
-| DT-01 a DT-04, DT-15 (frontend) | Skill `stack-flutter-web`; módulo `frontend` no `AGENTS.md`; Riverpod validado na revisão do PR |
+| DT-01 a DT-04, DT-15 (frontend) | Skills `stack-react-native-web` e `design-system-taskflow`; módulo `frontend` no `AGENTS.md`; bibliotecas de estado validadas na revisão do PR |
 | DT-05 a DT-10, DT-12, DT-14 (backend) | Skill `stack-java-spring`; módulo `backend` no `AGENTS.md`; história `HIST-XXX-fundacao` para a base técnica |
 | DT-11 (testes e cobertura) | Verificação `entrega` (rastreabilidade) e cobertura mínima do `AGENTS.md`, nos checks do PR |
 | DT-13 (segredos) | Variáveis de ambiente e secret scanning nativo do GitHub |
-| Qualidade de código | Skill `padrao-codigo` e verificação `qualidade` |
+| Qualidade de código | Skill `padrao-codigo`; verificação `qualidade` (Java) e ESLint (frontend) |
 | Rastreabilidade cenário ↔ teste | Agente `agente-testes` e verificação `entrega` |

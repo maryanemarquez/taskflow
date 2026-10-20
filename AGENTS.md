@@ -9,7 +9,7 @@
 - Idioma dos artefatos (documentos, histórias, relatórios): português do Brasil
 - Cobertura mínima de testes: `80%`
 - Versão do Java: `21`
-- Versão do Flutter: `stable`
+- Versão do Node: `22`
 - RNFs com meta mensurável exigidos na Definition of Done: RNF-05, RNF-06, RNF-08
 
 ## Módulos
@@ -19,7 +19,7 @@ Cada módulo usa uma skill de stack. O `construtor` carrega a skill do módulo i
 | Módulo | Pasta | Skill de stack | Referência externa |
 |---|---|---|---|
 | `backend` | `backend/` | `stack-java-spring` | não |
-| `frontend` | `frontend/` | `stack-flutter-web` | `rf-taskflow`: cópia local fora do repositório (cada desenvolvedor informa o caminho na sessão) |
+| `frontend` | `frontend/` | `stack-react-native-web` | `docs/referencia-visual/` (no repositório, somente leitura) |
 
 ## Documentos do projeto
 
@@ -70,12 +70,14 @@ Abra uma sessão nova para cada papel e use uma destas instruções:
 8. Em caso de dúvida, pare e pergunte, em vez de decidir sozinho.
 9. Decisões técnicas do projeto (DT-01 a DT-15) estão em `docs/arquitetura/TaskFlow_V1_Decisoes_Tecnicas.md`. Desvio exige registro em "Pontos em aberto" e aprovação no Gate 1.
 
-## Referência externa (material visual ou de outro sistema)
+## Referência visual (versionada, somente leitura)
 
-O módulo `frontend` tem referência visual (`rf-taskflow`, em Vite + React + Supabase):
+O módulo `frontend` tem referência visual (`taskflow-trailblazer`, protótipo em Vite + React com dados fictícios), versionada em `docs/referencia-visual/`:
 
-- O material fica **fora do repositório**. Nunca copie, cole ou versione esse conteúdo.
-- Somente o `construtor` do módulo `frontend` pode consultá-lo, e só para **aparência**: leiaute, hierarquia visual, espaçamento, estados de tela, paleta e tipografia.
-- Nunca reproduza lógica de estado, chamadas de API, dados, autenticação (Supabase), nomes de variáveis, funções ou propriedades.
-- O índice de uso (o que é liberado e o que é ignorado) está em `docs/referencia-visual-indice.md`. Item marcado ❌ ou ❓ não é implementado. A validação desse índice é a primeira tarefa do frontend (história de `fundacao`).
+- A pasta é **somente leitura**: nenhuma história a altera, e nada dela é compilado ou importado pelo app. Regras completas em `docs/referencia-visual/LEIA-ME.md`.
+- Somente o `construtor` do módulo `frontend` a consulta, seguindo a skill `design-system-taskflow`. Dela se usa **aparência** (leiaute, hierarquia visual, espaçamento, estados de tela, paleta, tipografia), **textos e mensagens**, **fluxos** e **estados**.
+- O **motor mock** (`motor-mock/`) pode ser portado para o `frontend` apenas como **mock de desenvolvimento e regras de UX**, seguindo `docs/referencia-visual/ADAPTACAO-RN.md`. Ele não substitui o backend: permissões, transições e demais regras de negócio vivem no Spring. Seus testes servem de fonte de cenários Gherkin.
+- Nunca reproduza componentes `.tsx`, classes Tailwind/Radix, nomes de variáveis ou lógica de estado do protótipo. A UI é reescrita em React Native.
+- Em conflito entre a referência e a documentação da V1, vale a documentação.
+- O índice de uso (o que é liberado e o que é ignorado) está em `docs/referencia-visual-indice.md`. Item marcado ⚪ ou ❓ não é implementado.
 - Dúvida sobre uma tela ou componente vai para "Pontos em aberto" da história.

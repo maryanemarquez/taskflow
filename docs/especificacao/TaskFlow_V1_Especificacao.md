@@ -2,7 +2,7 @@
 
 ## 1. O que é
 
-TaskFlow é uma aplicação web SaaS de gestão de tarefas e projetos, com dois modos de uso: Modo Pessoal (organização individual) e Modo Equipe (gestão colaborativa). Esta especificação cobre exclusivamente a **V1**, que constrói apenas o **Modo Equipe**, com escopo mínimo funcional. Na V1, a aplicação é entregue como aplicação web (Flutter Web).
+TaskFlow é uma aplicação web SaaS de gestão de tarefas e projetos, com dois modos de uso: Modo Pessoal (organização individual) e Modo Equipe (gestão colaborativa). Esta especificação cobre exclusivamente a **V1**, que constrói apenas o **Modo Equipe**, com escopo mínimo funcional. Na V1, a aplicação é entregue como aplicação web (React Native Web).
 
 O sistema organiza o trabalho em uma hierarquia simples: um **Workspace** contém **Projetos**, e cada Projeto contém **Tarefas**.
 

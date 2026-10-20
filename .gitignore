@@ -19,7 +19,8 @@ target/
 build/
 dist/
 coverage/
-.dart_tool/
+.expo/
+web-build/
 *.class
 
 # Configuração local de ferramentas de IA

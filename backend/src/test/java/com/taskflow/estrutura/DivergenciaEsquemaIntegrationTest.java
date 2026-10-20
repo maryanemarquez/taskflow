@@ -3,6 +3,7 @@ package com.taskflow.estrutura;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.taskflow.TaskFlowApplication;
+import com.taskflow.configuracao.ConfiguracaoTeste;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -35,12 +36,20 @@ class DivergenciaEsquemaIntegrationTest {
 
     private void iniciarAplicacaoComEntidadeDeTeste() {
         new SpringApplicationBuilder(TaskFlowApplication.class, MapeamentoDeTeste.class)
+                .profiles("test")
                 .web(WebApplicationType.NONE)
                 .properties(
                         "spring.datasource.url=" + MYSQL.getJdbcUrl(),
-                        "spring.datasource.username=" + MYSQL.getUsername(),
-                        "spring.datasource.password=" + MYSQL.getPassword(),
+                        "DB_USER=" + MYSQL.getUsername(),
+                        "DB_PASSWORD=" + MYSQL.getPassword(),
                         "spring.datasource.driver-class-name=" + MYSQL.getDriverClassName(),
+                        "JWT_SECRET=" + ConfiguracaoTeste.segredoJwt(),
+                        "MAIL_HOST=localhost",
+                        "MAIL_PORT=1025",
+                        "MAIL_USER=usuario-mail-teste",
+                        "MAIL_PASSWORD=" + ConfiguracaoTeste.senhaMail(),
+                        "MAIL_FROM=teste@taskflow.invalid",
+                        "APP_BASE_URL=http://localhost:3000",
                         "spring.flyway.enabled=false")
                 .run();
     }

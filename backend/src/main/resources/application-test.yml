@@ -1,6 +1,21 @@
 spring:
+  datasource:
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+  mail:
+    host: ${MAIL_HOST}
+    port: ${MAIL_PORT}
+    username: ${MAIL_USER}
+    password: ${MAIL_PASSWORD}
   jpa:
     hibernate:
       ddl-auto: validate
   flyway:
     enabled: true
+taskflow:
+  email:
+    from: ${MAIL_FROM}
+    base-url: ${APP_BASE_URL}
+  security:
+    jwt:
+      secret: ${JWT_SECRET}

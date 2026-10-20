@@ -12,3 +12,7 @@ spring:
 taskflow:
   email:
     from: ${MAIL_FROM}
+    base-url: ${APP_BASE_URL}
+  security:
+    jwt:
+      secret: ${JWT_SECRET}

@@ -2,6 +2,7 @@ package com.taskflow;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.taskflow.configuracao.ConfiguracaoTeste;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +33,13 @@ class TaskFlowApplicationTest {
         registry.add("spring.datasource.username", MYSQL::getUsername);
         registry.add("spring.datasource.password", MYSQL::getPassword);
         registry.add("spring.datasource.driver-class-name", MYSQL::getDriverClassName);
+        registry.add("taskflow.security.jwt.secret", ConfiguracaoTeste::segredoJwt);
+        registry.add("spring.mail.host", () -> "localhost");
+        registry.add("spring.mail.port", () -> "1025");
+        registry.add("spring.mail.username", () -> "usuario-mail-teste");
+        registry.add("spring.mail.password", ConfiguracaoTeste::senhaMail);
+        registry.add("taskflow.email.from", () -> "teste@taskflow.invalid");
+        registry.add("taskflow.email.base-url", () -> "http://localhost:3000");
     }
 
     @Test

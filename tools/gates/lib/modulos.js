@@ -49,7 +49,7 @@ function lerValor(textoAgents, rotulo) {
 
 const CONFIGURACOES = {
   java: { rotulo: 'Versão do Java', padrao: '21' },
-  flutter: { rotulo: 'Versão do Flutter', padrao: 'stable' },
+  node: { rotulo: 'Versão do Node', padrao: '22' },
 };
 const CHAVES_CONFIG = ['cobertura-minima', ...Object.keys(CONFIGURACOES)];
 
@@ -85,11 +85,11 @@ function modulosDoProjeto(inicio) {
   return { agents, raiz: path.dirname(agents), modulos: lerModulos(lerArquivo(agents)) };
 }
 
-/** Pastas de teste conhecidas dos módulos (src/test para Java, test para Dart). */
+/** Pastas de teste conhecidas dos módulos (src/test para Java, __tests__ e test para o frontend). */
 function pastasDeTeste(raiz, modulos) {
   const pastas = [];
   for (const modulo of modulos) {
-    for (const sub of ['src/test', 'test']) {
+    for (const sub of ['src/test', '__tests__', 'test']) {
       const caminho = path.join(raiz, modulo.pasta, sub);
       if (fs.existsSync(caminho)) pastas.push(caminho);
     }

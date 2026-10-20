@@ -28,7 +28,7 @@ Leia primeiro: `AGENTS.md` (tabela de módulos) e `ai/processo.md`.
 
 ## Skills obrigatórias
 
-- A **skill de stack do módulo** (por exemplo, `stack-java-spring` ou `stack-flutter-web`): padrões, TDD, tradução cenário→teste e comandos.
+- A **skill de stack do módulo** (por exemplo, `stack-java-spring` ou `stack-react-native-web`): padrões, TDD, tradução cenário→teste e comandos. No módulo com referência visual (veja o `AGENTS.md`), carregue também a skill indicada ali (`design-system-taskflow`).
 - `padrao-codigo`: regras de estilo comuns a todos os projetos (obrigatórias e recomendadas).
 
 ## Processo

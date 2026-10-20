@@ -10,7 +10,7 @@ const { verificarHistoria } = require('./lib/historia');
 const { verificarEntrega } = require('./lib/entrega');
 const { verificarLcov } = require('./lib/lcov');
 const { verificarArquivo } = require('./lib/qualidade');
-const { lerModulos, pastasDaStack, lerCoberturaMinima } = require('./lib/modulos');
+const { lerModulos, pastasDaStack, lerCoberturaMinima, pastasDeTeste } = require('./lib/modulos');
 
 const CLI = path.join(__dirname, 'verificar.js');
 const HISTORIA = fs.readFileSync(path.join(__dirname, 'fixtures', 'historia-valida.md'), 'utf8').replace(/\r\n?/g, '\n');
@@ -189,7 +189,7 @@ test('entrega: relatório ausente e pasta de teste ausente', () => {
 // ---------- lcov ----------
 
 test('lcov: soma LF/LH e compara com o mínimo', () => {
-  const texto = 'SF:a.dart\nLF:10\nLH:9\nend_of_record\nSF:b.dart\nLF:10\nLH:7\nend_of_record\n';
+  const texto = 'SF:a.ts\nLF:10\nLH:9\nend_of_record\nSF:b.ts\nLF:10\nLH:7\nend_of_record\n';
   assert.deepEqual(verificarLcov(texto, 80).erros, []);
   assert.equal(verificarLcov(texto, 80).percentual, 80);
   assert.ok(contem(verificarLcov(texto, 81).erros, 'abaixo do mínimo'));
@@ -255,51 +255,7 @@ test('qualidade Java: comentários e strings não confundem a contagem', () => {
   assert.deepEqual(verificarArquivo('Servico.java', fonte), []);
 });
 
-const metodoDart = (nome, n, parametros = '') => `  Widget ${nome}(${parametros}) {\n    var total = 0;\n${corpo(n, '    ')}\n    return total;\n  }\n`;
-const classeDart = (conteudo) => `import 'package:flutter/material.dart';\n\nclass Tela {\n${conteudo}}\n`;
-
-test('qualidade Dart: build longo, parâmetros nomeados e print', () => {
-  assert.deepEqual(verificarArquivo('tela.dart', classeDart(metodoDart('build', 10, 'BuildContext context'))), []);
-  assert.ok(contem(verificarArquivo('tela.dart', classeDart(metodoDart('build', 30, 'BuildContext context'))), 'Q-03'));
-  assert.ok(contem(verificarArquivo('tela.dart', classeDart(metodoDart('montar', 2, 'int a, {required int b, int c = 2, int d = 3}'))), 'Q-04'));
-  assert.ok(contem(verificarArquivo('tela.dart', classeDart('  void a() {\n    print(1);\n  }\n')), 'Q-06'));
-  assert.deepEqual(verificarArquivo('app_logger.dart', classeDart('  void a() {\n    print(1);\n  }\n')), []);
-  assert.deepEqual(verificarArquivo('tela.g.dart', classeDart(metodoDart('build', 40))), []);
-});
-
-test('qualidade Dart: texto fixo na interface', () => {
-  const fonte = classeDart("  Widget build(BuildContext c) {\n    return Text('Salvar projeto');\n  }\n");
-  assert.ok(contem(verificarArquivo('tela.dart', fonte), 'Q-05/Q-07'));
-  const palavra = classeDart("  Widget build(BuildContext c) {\n    return Text('Salvar');\n  }\n");
-  assert.ok(contem(verificarArquivo('tela.dart', palavra), 'Q-05/Q-07'));
-  const chave = classeDart("  Widget build(BuildContext c) {\n    return Text(Mensagens.salvar, key: Key('botao_salvar'));\n  }\n");
-  assert.deepEqual(verificarArquivo('tela.dart', chave), []);
-  assert.deepEqual(verificarArquivo('mensagens.dart', classeDart("  static const salvar = 'Salvar projeto';\n")), []);
-  assert.deepEqual(verificarArquivo('tela_test.dart', fonte), []);
-});
-
-test('qualidade Dart: interpolação e strings brutas não quebram a contagem', () => {
-  const fonte = classeDart("  void a() {\n    var s = '${1 + 2} {';\n    var r = r'}}}';\n  }\n  void b() {\n    var x = 1;\n  }\n");
-  assert.deepEqual(verificarArquivo('tela.dart', fonte), []);
-});
-
-const construtorDart = (parametros, antes = '') => classeDart(`${antes}  const Tela({${parametros}});\n`);
-const QUATRO_PARAMETROS = 'super.key, required this.a, required this.b, required this.c';
 const soQ04 = (lista) => lista.filter((e) => e.mensagem.startsWith('Q-04'));
-
-test('qualidade Dart: construtor sem corpo com 4 parâmetros gera uma violação Q-04', () => {
-  assert.equal(soQ04(verificarArquivo('tela.dart', construtorDart(QUATRO_PARAMETROS))).length, 1);
-});
-
-test('qualidade Dart: construtor sem corpo com 3 parâmetros passa', () => {
-  const tres = 'required this.a, required this.b, required this.c';
-  assert.deepEqual(verificarArquivo('tela.dart', construtorDart(tres)), []);
-});
-
-test('qualidade Dart: construtor sem corpo com exceção justificada passa', () => {
-  const comExcecao = construtorDart(QUATRO_PARAMETROS, '  // qualidade-exceção: injeção de dependências\n');
-  assert.deepEqual(verificarArquivo('tela.dart', comExcecao), []);
-});
 
 test('qualidade Java: enum com argumentos e ";" não gera Q-04', () => {
   const fonte = 'package a.b;\n\nenum Cor {\n    A(1, 2, 3, 4);\n\n    Cor(int... valores) {\n        int x = valores.length;\n    }\n}\n';
@@ -325,7 +281,7 @@ const AGENTS = `# AGENTS
 | Módulo | Pasta | Skill de stack | Referência externa |
 |---|---|---|---|
 | \`backend\` | \`backend/\` | \`stack-java-spring\` | não |
-| \`frontend\` | \`frontend/\` | \`stack-flutter-web\` | não |
+| \`frontend\` | \`frontend/\` | \`stack-react-native-web\` | não |
 | \`<exemplo>\` | \`<pasta/>\` | \`<skill>\` | \`<x>\` |
 
 ## Outro
@@ -334,7 +290,7 @@ const AGENTS = `# AGENTS
 test('módulos: lê a tabela e ignora linhas de modelo', () => {
   assert.deepEqual(lerModulos(AGENTS), [
     { modulo: 'backend', pasta: 'backend', skill: 'stack-java-spring' },
-    { modulo: 'frontend', pasta: 'frontend', skill: 'stack-flutter-web' },
+    { modulo: 'frontend', pasta: 'frontend', skill: 'stack-react-native-web' },
   ]);
   assert.deepEqual(lerModulos('sem tabela'), []);
 });
@@ -429,13 +385,13 @@ test('CLI modulos: módulo com skill inexistente em ai/skills sai com 2', () => 
   comSkills(raiz, 'stack-java-spring');
   const resultado = rodarEm(raiz, 'modulos', 'stack-java-spring');
   assert.equal(resultado.status, 2);
-  assert.match(resultado.stderr, /módulo "frontend": skill "stack-flutter-web"/);
+  assert.match(resultado.stderr, /módulo "frontend": skill "stack-react-native-web"/);
 });
 
 test('CLI modulos: AGENTS.md válido e skill existente imprime a pasta', () => {
   const raiz = tmp();
   escrever(path.join(raiz, 'AGENTS.md'), AGENTS);
-  comSkills(raiz, 'stack-java-spring', 'stack-flutter-web');
+  comSkills(raiz, 'stack-java-spring', 'stack-react-native-web');
   const resultado = rodarEm(raiz, 'modulos', 'stack-java-spring');
   assert.equal(resultado.status, 0, resultado.stderr);
   assert.equal(resultado.stdout, 'backend\n');
@@ -444,7 +400,7 @@ test('CLI modulos: AGENTS.md válido e skill existente imprime a pasta', () => {
 test('CLI modulos: nenhum módulo da skill consultada sai com 0 e saída vazia', () => {
   const raiz = tmp();
   escrever(path.join(raiz, 'AGENTS.md'), AGENTS);
-  comSkills(raiz, 'stack-java-spring', 'stack-flutter-web');
+  comSkills(raiz, 'stack-java-spring', 'stack-react-native-web');
   const resultado = rodarEm(raiz, 'modulos', 'stack-python');
   assert.equal(resultado.status, 0, resultado.stderr);
   assert.equal(resultado.stdout, '');
@@ -474,12 +430,12 @@ test('CLI config: java lê a versão declarada no AGENTS.md', () => {
   assert.equal(resultado.stdout, '17\n');
 });
 
-test('CLI config: flutter sem a linha usa o padrão stable', () => {
+test('CLI config: node sem a linha usa o padrão 22', () => {
   const raiz = tmp();
   escrever(path.join(raiz, 'AGENTS.md'), LINHA_COBERTURA);
-  const resultado = rodarEm(raiz, 'config', 'flutter');
+  const resultado = rodarEm(raiz, 'config', 'node');
   assert.equal(resultado.status, 0, resultado.stderr);
-  assert.equal(resultado.stdout, 'stable\n');
+  assert.equal(resultado.stdout, '22\n');
 });
 
 test('CLI config: chave desconhecida sai com 2 e lista as válidas', () => {
@@ -487,11 +443,43 @@ test('CLI config: chave desconhecida sai com 2 e lista as válidas', () => {
   escrever(path.join(raiz, 'AGENTS.md'), LINHA_COBERTURA);
   const resultado = rodarEm(raiz, 'config', 'chave-invalida');
   assert.equal(resultado.status, 2);
-  assert.match(resultado.stderr, /cobertura-minima, java, flutter/);
+  assert.match(resultado.stderr, /cobertura-minima, java, node/);
 });
 
 test('CLI config: cobertura-minima sem a linha de cobertura sai com 2', () => {
   const raiz = tmp();
   escrever(path.join(raiz, 'AGENTS.md'), '# sem cobertura\n');
   assert.equal(rodarEm(raiz, 'config', 'cobertura-minima').status, 2);
+});
+
+test('entrega: testes do frontend em __tests__ com extensão .tsx são rastreados', () => {
+  const { raiz, pasta } = montarEntrega({ testes: '' });
+  const frontend = path.join(raiz, 'frontend', '__tests__');
+  escrever(path.join(frontend, 'projeto.test.tsx'), `it('${ID}/C01 - a', () => {});\nit('${ID}/C02, ${ID}/C03 - b', () => {});\n`);
+  assert.deepEqual(verificarEntrega(pasta, [frontend]), []);
+});
+
+test('módulos: pastas de teste incluem src/test, __tests__ e test', () => {
+  const raiz = tmp();
+  escrever(path.join(raiz, 'backend', 'src', 'test', 'A.java'), '');
+  escrever(path.join(raiz, 'frontend', '__tests__', 'a.test.tsx'), '');
+  const modulos = [{ modulo: 'backend', pasta: 'backend' }, { modulo: 'frontend', pasta: 'frontend' }];
+  assert.deepEqual(pastasDeTeste(raiz, modulos).sort(), [
+    path.join(raiz, 'backend', 'src', 'test'), path.join(raiz, 'frontend', '__tests__'),
+  ].sort());
+});
+
+test('qualidade: arquivos do frontend (.ts e .tsx) não são analisados por este modo', () => {
+  const raiz = tmp();
+  escrever(path.join(raiz, 'tela.tsx'), `export function Tela() {\n${'  const a = 1;\n'.repeat(40)}}\n`);
+  const resultado = spawnSync(process.execPath, [CLI, 'qualidade', raiz], { encoding: 'utf8' });
+  assert.equal(resultado.status, 0, resultado.stderr);
+});
+
+test('CLI config: node lê a versão declarada no AGENTS.md', () => {
+  const raiz = tmp();
+  escrever(path.join(raiz, 'AGENTS.md'), `${LINHA_COBERTURA}- Versão do Node: \`20\`\n`);
+  const resultado = rodarEm(raiz, 'config', 'node');
+  assert.equal(resultado.status, 0, resultado.stderr);
+  assert.equal(resultado.stdout, '20\n');
 });

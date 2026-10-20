@@ -1,0 +1,65 @@
+# CI da stack React Native Web: formatação (120), lint com as regras de `padrao-codigo`, tipos,
+# testes e cobertura mínima (lcov) e build web. Roda nos módulos do AGENTS.md que usam a skill
+# `stack-react-native-web` e que foram alterados pelo PR. Sem módulo alterado, passa.
+name: ci-react-native-web
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  react-native-web:
+    name: react-native-web
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Descobrir módulos alterados
+        id: modulos
+        env:
+          BASE: origin/${{ github.base_ref }}
+        run: |
+          set -euo pipefail
+          pastas="$(node tools/gates/verificar.js modulos stack-react-native-web --base "$BASE" | paste -sd, -)"
+          echo "pastas=${pastas}" >> "$GITHUB_OUTPUT"
+          echo "Módulos React Native Web alterados: ${pastas:-nenhum}"
+      - name: Ler configuração do projeto
+        id: cfg
+        if: steps.modulos.outputs.pastas != ''
+        run: |
+          set -euo pipefail
+          echo "node=$(node tools/gates/verificar.js config node)" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-node@v4
+        if: steps.modulos.outputs.pastas != ''
+        with:
+          node-version: ${{ steps.cfg.outputs.node }}
+          cache: npm
+          cache-dependency-path: '**/package-lock.json'
+      - name: Verificar módulos
+        if: steps.modulos.outputs.pastas != ''
+        env:
+          PASTAS: ${{ steps.modulos.outputs.pastas }}
+        run: |
+          set -euo pipefail
+          IFS=',' read -ra lista <<< "$PASTAS"
+          for pasta in "${lista[@]}"; do
+            echo "::group::${pasta}"
+            (
+              cd "$pasta"
+              npm ci
+              npx prettier --check .
+              npx eslint . --max-warnings 0
+              npx tsc --noEmit
+              npx jest --coverage
+              node "$GITHUB_WORKSPACE/tools/gates/verificar.js" lcov coverage/lcov.info --min auto
+              npx expo export --platform web
+            )
+            echo "::endgroup::"
+          done

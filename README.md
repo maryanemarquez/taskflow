@@ -11,7 +11,7 @@ Este repositório é um **modelo (template)**: você cria um projeto novo a part
 1. **O repositório é o canal.** Nada depende da memória de uma conversa.
 2. **Você orquestra.** Cada papel (gerenciador de histórias, construtor, agente de testes) roda em uma sessão separada.
 3. **O robô é o juiz.** Testes, cobertura e rastreabilidade são conferidos pelo GitHub, não pela IA que escreveu o código.
-4. **Tecnologia é detalhe de skill.** Os papéis são genéricos; Java, Flutter, Python etc. entram por uma skill de stack.
+4. **Tecnologia é detalhe de skill.** Os papéis são genéricos; Java, React Native, Python etc. entram por uma skill de stack.
 
 ## 2. Estrutura
 
@@ -72,7 +72,7 @@ A IA lê o arquivo do papel, o `AGENTS.md` do projeto e as skills que o papel ma
 | Verificação | Quando roda | Para que serve |
 |---|---|---|
 | `historia` | PR de branch `historia/*` | Impede história mal estruturada (seções, cenários com ID, marcadores) |
-| Job da stack (ex.: `java-spring`, `flutter-web`) | PR que altera a pasta do módulo | Roda testes, exige a cobertura mínima e as regras obrigatórias de estilo (`padrao-codigo`); regras recomendadas só geram alerta |
+| Job da stack (ex.: `java-spring`, `react-native-web`) | PR que altera a pasta do módulo | Roda testes, exige a cobertura mínima e as regras obrigatórias de estilo (`padrao-codigo`); regras recomendadas só geram alerta |
 | `entrega` | PR de branch `feature/*` | Confere se todo cenário tem teste que o cita e se o relatório está `LIBERADO` |
 | Secret scanning do GitHub | Todo push | Bloqueia segredos no código |
 
@@ -111,7 +111,7 @@ Faça uma vez por repositório.
 1. **Proteger a `main`:** Settings → Rules → Rulesets → New branch ruleset.
    - Alvo: branch `main`.
    - Marque *Require a pull request before merging*, **sem** exigir aprovações (você trabalha sozinha).
-   - Marque *Require status checks to pass* e adicione as verificações: `historia`, `entrega` e o job de cada stack em uso (`java-spring`, `flutter-web`). Jobs pulados (por exemplo, `historia` em um branch `feature/*`) contam como sucesso. Confira os nomes exatos na aba *Checks* do primeiro PR.
+   - Marque *Require status checks to pass* e adicione as verificações: `historia`, `entrega` e o job de cada stack em uso (`java-spring`, `react-native-web`). Jobs pulados (por exemplo, `historia` em um branch `feature/*`) contam como sucesso. Confira os nomes exatos na aba *Checks* do primeiro PR.
 2. **Segredos:** Settings → Code security → ative *Secret scanning* e *Push protection*.
 3. **Modelo (só no `sdd-framework`):** Settings → General → marque *Template repository*.
 4. **Apagar branches mesclados:** Settings → General → *Automatically delete head branches*.

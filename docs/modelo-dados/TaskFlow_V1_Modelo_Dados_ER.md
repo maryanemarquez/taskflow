@@ -318,7 +318,7 @@ A V1 implementa **exclusão física** (`DELETE`), sem soft delete. Não há camp
 
 ## 7. Fuso Horário
 
-Todos os campos `datetime` (`criado_em`, `expira_em`) são armazenados em **UTC**. A conversão para **America/Sao_Paulo (UTC−03:00)** ocorre apenas na apresentação (cliente/Flutter). A API trafega datas e horas em ISO-8601 com indicação de UTC.
+Todos os campos `datetime` (`criado_em`, `expira_em`) são armazenados em **UTC**. A conversão para **America/Sao_Paulo (UTC−03:00)** ocorre apenas na apresentação (cliente web). A API trafega datas e horas em ISO-8601 com indicação de UTC.
 
 - O MySQL `DATETIME` não armazena informação de fuso — cabe ao backend Spring Boot gravar e interpretar os valores sempre em UTC (fuso padrão da JVM e da conexão JDBC configurados em UTC), de forma consistente em toda a base.
 - Os cálculos de expiração (`expira_em` de convites, tokens de recuperação e refresh tokens) são feitos e comparados em UTC.

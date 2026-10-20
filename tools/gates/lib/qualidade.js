@@ -3,7 +3,7 @@
 /**
  * Regras obrigatórias de estilo (skill padrao-codigo) que as ferramentas das stacks não cobrem:
  * Q-01 (linha), Q-02 (classe), Q-03 (método), Q-04 (parâmetros), Q-05/Q-07 (texto fixo) e
- * Q-06 (log centralizado). Heurístico: lê Java e Dart sem analisador sintático completo.
+ * Q-06 (log centralizado). Heurístico: lê Java sem analisador sintático completo.
  */
 
 const path = require('node:path');
@@ -16,15 +16,13 @@ const CONTROLE = new Set([
   'super', 'this', 'assert', 'when', 'finally', 'with',
 ]);
 const REGEX_EXCECAO = /qualidade-exceção:(.*)$/;
-const GERADOS = /\.(g|freezed|mocks|gr)\.dart$/;
 const NOME_LOG = /(logger|logging|applog|app_log)|^log$/i;
 const NOME_TEXTOS = /(message|mensage|constant|constante|strings|config|properties|labels|textos?|texts)/i;
 const LINHA_DE_LOG = /\b(log|logger|LOG|LOGGER|Log|AppLogger)\w*\s*\./;
 const SAIDA_JAVA = /\bSystem\s*\.\s*(out|err)\b|\.printStackTrace\s*\(/;
-const SAIDA_DART = /(^|[^\w.])(print|debugPrint)\s*\(|\b(stdout|stderr)\s*\.\s*write/;
 
 /** Remove comentários e esvazia strings, preservando as linhas. Devolve também os literais. */
-function limparFonte(texto, dart) {
+function limparFonte(texto) {
   const codigo = [''];
   const literais = [];
   let linha = 0;
@@ -44,9 +42,9 @@ function limparFonte(texto, dart) {
       }
       i += 2;
     } else {
-      const aspas = abrirString(texto, i, dart);
+      const aspas = abrirString(texto, i);
       if (aspas) {
-        i = consumirString(texto, aspas, dart, emitir, literais, linha);
+        i = consumirString(texto, aspas, emitir, literais, linha);
       } else {
         emitir(c);
         i += 1;
@@ -56,21 +54,15 @@ function limparFonte(texto, dart) {
   return { codigo, literais };
 }
 
-function abrirString(texto, i, dart) {
-  let k = i;
-  let cru = false;
-  if (dart && texto[k] === 'r' && /['"]/.test(texto[k + 1] || '') && !/[\w$]/.test(texto[i - 1] || '')) {
-    cru = true;
-    k += 1;
-  }
-  const q = texto[k];
+function abrirString(texto, i) {
+  const q = texto[i];
   if (q !== '"' && q !== "'") return null;
-  const triplo = texto.startsWith(q.repeat(3), k);
-  return { q, triplo, cru, abre: k + (triplo ? 3 : 1) };
+  const triplo = texto.startsWith(q.repeat(3), i);
+  return { q, triplo, abre: i + (triplo ? 3 : 1) };
 }
 
-function consumirString(texto, aspas, dart, emitir, literais, linhaInicial) {
-  const { q, triplo, cru } = aspas;
+function consumirString(texto, aspas, emitir, literais, linhaInicial) {
+  const { q, triplo } = aspas;
   let j = aspas.abre;
   let conteudo = '';
   emitir(q);
@@ -81,21 +73,10 @@ function consumirString(texto, aspas, dart, emitir, literais, linhaInicial) {
     if (c === '\n') emitir('\n');
   };
   while (j < texto.length) {
-    if (!cru && texto[j] === '\\') {
+    if (texto[j] === '\\') {
       guardar(texto[j]);
       guardar(texto[j + 1] || '');
       j += 2;
-    } else if (dart && !cru && texto[j] === '$' && texto[j + 1] === '{') {
-      let nivel = 1;
-      guardar('$');
-      guardar('{');
-      j += 2;
-      while (j < texto.length && nivel > 0) {
-        if (texto[j] === '{') nivel += 1;
-        if (texto[j] === '}') nivel -= 1;
-        guardar(texto[j]);
-        j += 1;
-      }
     } else if (triplo ? texto.startsWith(q.repeat(3), j) : texto[j] === q) {
       j += triplo ? 3 : 1;
       break;
@@ -114,7 +95,6 @@ function consumirString(texto, aspas, dart, emitir, literais, linhaInicial) {
 function lerAssinatura(cabeca) {
   let resto = cabeca.replace(/\s+$/, '')
     .replace(/\s+throws\s+[\w$.,<>?\s]+$/, '')
-    .replace(/\s+(async\*?|sync\*|async)$/, '')
     .replace(/\s+$/, '');
   if (!resto.endsWith(')')) return null;
   let nivel = 0;
@@ -152,8 +132,7 @@ function lerAssinatura(cabeca) {
   return { nome, parametros, deslocamento: j + 1 };
 }
 
-function contarParametros(texto, dart) {
-  const limpo = dart ? texto.replace(/[{}[\]]/g, ' ') : texto;
+function contarParametros(limpo) {
   let nivel = 0;
   let atual = '';
   const partes = [];
@@ -168,26 +147,26 @@ function contarParametros(texto, dart) {
   return partes.filter((p) => p.trim() !== '').length;
 }
 
-function classificar(cabeca, inicioCabeca, pilha, dart) {
+function classificar(cabeca, inicioCabeca, pilha) {
   const tipo = /(?:^|[^\w$@])(class|interface|enum|mixin|extension|record)\s+([A-Za-z_$][\w$]*)/.exec(cabeca);
   if (tipo) {
     return { tipo: 'classe', nome: tipo[2], posicao: inicioCabeca + tipo.index + tipo[0].length - tipo[2].length };
   }
   if (cabeca.includes('=>')) return { tipo: 'outro' };
   const pai = pilha[pilha.length - 1];
-  const permitido = pai ? pai.tipo === 'classe' : dart;
+  const permitido = Boolean(pai) && pai.tipo === 'classe';
   const assinatura = permitido ? lerAssinatura(cabeca) : null;
   if (!assinatura) return { tipo: 'outro' };
   return {
     tipo: 'metodo',
     nome: assinatura.nome,
     posicao: inicioCabeca + assinatura.deslocamento,
-    parametros: contarParametros(assinatura.parametros, dart),
+    parametros: contarParametros(assinatura.parametros),
   };
 }
 
 /** Encontra classes e métodos (com linha inicial, final e parâmetros) a partir do código limpo. */
-function analisarEstrutura(codigo, dart) {
+function analisarEstrutura(codigo) {
   const texto = codigo.join('\n');
   const inicios = [0];
   for (let i = 0; i < texto.length; i += 1) if (texto[i] === '\n') inicios.push(i + 1);
@@ -204,29 +183,15 @@ function analisarEstrutura(codigo, dart) {
   const itens = [];
   let parenteses = 0;
   let inicioCabeca = 0;
-  // Dart: construtor sem corpo ("const Tela({...});") termina em ";" e nunca abre "{".
-  const registrarConstrutorSemCorpo = (fim) => {
-    const pai = pilha[pilha.length - 1];
-    if (!dart || !pai || pai.tipo !== 'classe') return;
-    const assinatura = lerAssinatura(texto.slice(inicioCabeca, fim));
-    if (!assinatura || assinatura.nome !== pai.nome) return;
-    const linha = linhaDe(inicioCabeca + assinatura.deslocamento);
-    itens.push({
-      tipo: 'metodo', nome: assinatura.nome, parametros: contarParametros(assinatura.parametros, true),
-      linhaInicial: linha, linhaFinal: linha,
-    });
-  };
   for (let p = 0; p < texto.length; p += 1) {
     const c = texto[p];
     if (c === '(') parenteses += 1;
     else if (c === ')') parenteses = Math.max(0, parenteses - 1);
     else if (parenteses === 0) {
       if (c === ';') {
-        registrarConstrutorSemCorpo(p);
         inicioCabeca = p + 1;
-      }
-      else if (c === '{') {
-        const bloco = classificar(texto.slice(inicioCabeca, p), inicioCabeca, pilha, dart);
+      } else if (c === '{') {
+        const bloco = classificar(texto.slice(inicioCabeca, p), inicioCabeca, pilha);
         pilha.push(bloco);
         inicioCabeca = p + 1;
       } else if (c === '}') {
@@ -241,15 +206,13 @@ function analisarEstrutura(codigo, dart) {
   return itens;
 }
 
-const ehTeste = (caminho) => /(^|[\\/])(test|tests|integration_test)[\\/]/.test(caminho)
-  || /(Test|Tests|IT)\.java$/.test(caminho) || /_test\.dart$/.test(caminho);
+const ehTeste = (caminho) => /(^|[\\/])(test|tests)[\\/]/.test(caminho) || /(Test|Tests|IT)\.java$/.test(caminho);
 
 const ehTextoDeNegocio = (t) => /^https?:\/\//.test(t) || /\p{L}+\s+\p{L}+/u.test(t)
   || /^\p{Lu}\p{Ll}{2,}[.!?:]?$/u.test(t);
 
-function declaraConstante(linhaBruta, dart) {
-  if (!dart) return /\bstatic\s+final\b/.test(linhaBruta);
-  return /\b(static\s+(const|final)|const)\s+(String\s+)?[A-Za-z_]\w*\s*=/.test(linhaBruta);
+function declaraConstante(linhaBruta) {
+  return /\bstatic\s+final\b/.test(linhaBruta);
 }
 
 /** Índices das linhas que estão dentro dos parênteses de uma anotação (@Nome( ... )), mesmo em várias linhas. */
@@ -275,11 +238,9 @@ function linhasEmAnotacao(codigo) {
 }
 
 function verificarArquivo(caminho, texto) {
-  const dart = caminho.endsWith('.dart');
   const nome = path.basename(caminho).replace(/\.[^.]+$/, '');
   const erros = [];
   const falha = (regra, linha, mensagem) => erros.push({ caminho, linha: linha + 1, mensagem: `${regra} ${mensagem}` });
-  if (GERADOS.test(caminho)) return erros;
 
   const brutas = texto.split('\n');
   const excecaoArquivo = brutas.slice(0, LINHAS_DE_CABECALHO).some((l) => REGEX_EXCECAO.test(l));
@@ -296,15 +257,15 @@ function verificarArquivo(caminho, texto) {
     });
   }
 
-  const { codigo, literais } = limparFonte(texto, dart);
-  const importacao = dart ? /^\s*(import|export|part|library)\b/ : /^\s*(import|package)\b/;
+  const { codigo, literais } = limparFonte(texto);
+  const importacao = /^\s*(import|package)\b/;
   const contaLinha = codigo.map((l) => (l.trim() !== '' && !importacao.test(l) ? 1 : 0));
   const prefixo = [0];
   contaLinha.forEach((v) => prefixo.push(prefixo[prefixo.length - 1] + v));
   const linhasDeCodigo = (ini, fim) => prefixo[fim + 1] - prefixo[ini];
 
   if (!excecaoArquivo) {
-    analisarEstrutura(codigo, dart).forEach((item) => {
+    analisarEstrutura(codigo).forEach((item) => {
       if (excecaoEm(item.linhaInicial)) return;
       const total = linhasDeCodigo(item.linhaInicial, item.linhaFinal);
       if (item.tipo === 'classe' && !ehTeste(caminho) && total > LIMITES.classe) {
@@ -320,9 +281,8 @@ function verificarArquivo(caminho, texto) {
   }
 
   if (!NOME_LOG.test(nome)) {
-    const padrao = dart ? SAIDA_DART : SAIDA_JAVA;
     codigo.forEach((l, i) => {
-      if (padrao.test(l)) falha('Q-06', i, 'saída direta (print/System.out/printStackTrace); use a classe centralizada de logging.');
+      if (SAIDA_JAVA.test(l)) falha('Q-06', i, 'saída direta (print/System.out/printStackTrace); use a classe centralizada de logging.');
     });
   }
 
@@ -332,7 +292,7 @@ function verificarArquivo(caminho, texto) {
     literais.filter((l) => ehTextoDeNegocio(l.texto)).forEach((l) => {
       const bruta = brutas[l.linha] || '';
       const dispensado = bruta.trim().startsWith('@') || emAnotacao.has(l.linha) || LINHA_DE_LOG.test(bruta)
-        || declaraConstante(bruta, dart);
+        || declaraConstante(bruta);
       if (!dispensado) {
         falha('Q-05/Q-07', l.linha, `texto fixo "${l.texto.trim().slice(0, 40)}"; mova para constante ou para a classe de mensagens.`);
       }
@@ -344,7 +304,7 @@ function verificarArquivo(caminho, texto) {
 function verificarQualidade(raizes) {
   const erros = [];
   for (const raiz of raizes) {
-    for (const arquivo of listarArquivos(raiz, ['.java', '.dart'])) {
+    for (const arquivo of listarArquivos(raiz, ['.java'])) {
       erros.push(...verificarArquivo(arquivo, lerArquivo(arquivo)));
     }
   }

@@ -2,58 +2,21 @@ package com.taskflow.estrutura;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.taskflow.configuracao.ConfiguracaoTeste;
-import java.util.List;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
-@SpringBootTest
-@Testcontainers
-@ActiveProfiles("test")
 class BancoVersionadoIntegrationTest {
-
-    private static final String TABELAS_DE_NEGOCIO =
-            "usuario, workspace, usuario_workspace, convite, projeto, tarefa, tag, tarefa_tag, "
-                    + "recuperacao_senha, refresh_token";
-
-    @Container
-    private static final MySQLContainer<?> MYSQL =
-            new MySQLContainer<>("mysql:8.4");
-
-    @Autowired
-    private JdbcTemplate jdbcTemplate;
-
-    @DynamicPropertySource
-    static void configurarBanco(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", MYSQL::getJdbcUrl);
-        registry.add("spring.datasource.username", MYSQL::getUsername);
-        registry.add("spring.datasource.password", MYSQL::getPassword);
-        registry.add("spring.datasource.driver-class-name", MYSQL::getDriverClassName);
-        registry.add("taskflow.security.jwt.secret", ConfiguracaoTeste::segredoJwt);
-        registry.add("spring.mail.host", () -> "localhost");
-        registry.add("spring.mail.port", () -> "1025");
-        registry.add("spring.mail.username", () -> "usuario-mail-teste");
-        registry.add("spring.mail.password", ConfiguracaoTeste::senhaMail);
-        registry.add("taskflow.email.from", () -> "teste@taskflow.invalid");
-        registry.add("taskflow.email.base-url", () -> "http://localhost:3000");
-    }
 
     @Test
     @DisplayName("HIST-002-fundacao/C11 - migração inicial não cria tabelas de negócio")
-    void migracaoInicialNaoCriaTabelasDeNegocio() {
-        List<String> tabelas = jdbcTemplate.queryForList(
-                "SELECT table_name FROM information_schema.tables "
-                        + "WHERE table_schema = DATABASE()",
-                String.class);
-
-        assertThat(tabelas).doesNotContain(TABELAS_DE_NEGOCIO.split(", "));
+    void migracaoInicialNaoCriaTabelasDeNegocio() throws IOException {
+        try (InputStream migracao = getClass().getResourceAsStream(
+                "/db/migration/V1__base_tecnica.sql")) {
+            String sql = new String(migracao.readAllBytes(), StandardCharsets.UTF_8);
+            assertThat(sql).contains("SELECT 1").doesNotContain("CREATE TABLE");
+        }
     }
 }

@@ -1,6 +1,8 @@
 package com.taskflow.erro;
 
+import com.taskflow.auth.service.ErroCadastro;
 import java.net.URI;
+import java.util.List;
 import java.util.Locale;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
@@ -28,6 +30,25 @@ public class TratadorErroApi {
                 codigo.status(),
                 codigo.codigo(),
                 requisicao.getRequestURI());
+    }
+
+    @ExceptionHandler(ErroCadastro.class)
+    public ResponseEntity<ProblemDetail> tratarErroCadastro(
+            ErroCadastro erro,
+            HttpServletRequest requisicao) {
+        ProblemDetail problema = ProblemDetail.forStatusAndDetail(
+                HttpStatus.BAD_REQUEST, MensagensApi.detalhe(MensagensApi.CODIGO_VALIDACAO));
+        problema.setType(URI.create(
+                MensagensApi.PREFIXO_TIPO
+                        + MensagensApi.CODIGO_VALIDACAO.toLowerCase(Locale.ROOT)));
+        problema.setTitle(MensagensApi.titulo(MensagensApi.CODIGO_VALIDACAO));
+        problema.setInstance(URI.create(requisicao.getRequestURI()));
+        problema.setProperty("codigo", MensagensApi.CODIGO_VALIDACAO);
+        problema.setProperty("erros", List.of(
+                MensagensApi.campo(MensagensApi.CAMPO_SENHA, erro.codigoCampo())));
+        return ResponseEntity.badRequest()
+                .contentType(MediaType.APPLICATION_PROBLEM_JSON)
+                .body(problema);
     }
 
     @ExceptionHandler(Exception.class)

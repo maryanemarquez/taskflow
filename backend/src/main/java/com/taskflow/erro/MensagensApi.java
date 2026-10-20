@@ -10,6 +10,7 @@ public final class MensagensApi {
     public static final String TITULO_ERRO_INTERNO = "Erro interno";
     public static final String DETALHE_ERRO_INTERNO = "Ocorreu um erro inesperado.";
     public static final String LOG_FALHA_INTERNA = "Falha interna de tipo {}";
+    public static final String LOG_FALHA_EMAIL = "Falha no envio de e-mail de tipo {}";
 
     private MensagensApi() {
     }

@@ -12,4 +12,8 @@ public class LoggingCentralizado {
     public void registrarFalhaInterna(Throwable falha) {
         LOGGER.error(MensagensApi.LOG_FALHA_INTERNA, falha.getClass().getName());
     }
+
+    public void registrarFalhaEnvioEmail(Throwable falha) {
+        LOGGER.error(MensagensApi.LOG_FALHA_EMAIL, falha.getClass().getName());
+    }
 }

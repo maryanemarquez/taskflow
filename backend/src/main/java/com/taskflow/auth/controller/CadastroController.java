@@ -11,18 +11,16 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping(PREFIXO_AUTH)
+@RequestMapping(RotasAuth.PREFIXO_AUTH)
 public class CadastroController {
 
-    private static final String PREFIXO_AUTH = "/api/v1/auth";
-    private static final String ROTA_CADASTRO = "/cadastro";
     private final CadastroService cadastroService;
 
     public CadastroController(CadastroService cadastroService) {
         this.cadastroService = cadastroService;
     }
 
-    @PostMapping(ROTA_CADASTRO)
+    @PostMapping(RotasAuth.ROTA_CADASTRO)
     public ResponseEntity<SessaoResponse> cadastrar(@RequestBody CadastroRequest cadastro) {
         return ResponseEntity.status(HttpStatus.CREATED).body(cadastroService.cadastrar(cadastro));
     }

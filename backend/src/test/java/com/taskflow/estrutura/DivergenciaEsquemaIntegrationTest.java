@@ -1,5 +1,6 @@
 package com.taskflow.estrutura;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.taskflow.TaskFlowApplication;
@@ -12,8 +13,8 @@ import org.hibernate.tool.schema.spi.SchemaManagementException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.WebApplicationType;
-import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.boot.persistence.autoconfigure.EntityScan;
 import org.springframework.context.annotation.Configuration;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -31,6 +32,7 @@ class DivergenciaEsquemaIntegrationTest {
     void inicializacaoFalhaComEsquemaDivergente() throws SQLException {
         assertThatThrownBy(this::iniciarAplicacaoComEntidadeDeTeste)
                 .hasRootCauseInstanceOf(SchemaManagementException.class);
+
         assertThat(tabelasCriadasNoBanco()).isZero();
     }
 

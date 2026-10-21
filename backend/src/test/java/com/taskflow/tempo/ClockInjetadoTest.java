@@ -13,7 +13,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
-@SpringJUnitConfig({ConfiguracaoTempo.class, ClockFixoTestConfig.class})
+@SpringJUnitConfig({ConfiguracaoTempo.class, ClockInjetadoTest.ClockFixoTestConfig.class})
 class ClockInjetadoTest {
 
     private static final Instant INSTANTE_FIXO = Instant.parse("2026-10-20T12:00:00Z");

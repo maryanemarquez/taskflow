@@ -1,0 +1,16 @@
+{
+  "expo": {
+    "name": "TaskFlow",
+    "slug": "taskflow",
+    "version": "1.0.0",
+    "scheme": "taskflow",
+    "plugins": ["expo-router", "expo-font"],
+    "web": {
+      "bundler": "metro",
+      "output": "single"
+    },
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
